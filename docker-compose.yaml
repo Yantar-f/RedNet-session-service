@@ -1,0 +1,25 @@
+version: "3.0"
+
+services:
+    redis-sessions:
+        container_name: rednet-session-service-redis-sessions
+        image: redis
+        ports:
+            - "6379:6379"
+        networks:
+            - rednet-network
+    api:
+        container_name: rednet-session-service
+        build: ./session-service
+        env_file:
+            - ./session-service/.env
+        ports:
+            - "8002:8002"
+        depends_on:
+            - redis-sessions
+        restart: unless-stopped
+        networks:
+            - rednet-network
+networks:
+    rednet-network:
+        external: true
