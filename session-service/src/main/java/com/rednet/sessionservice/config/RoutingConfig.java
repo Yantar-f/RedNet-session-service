@@ -25,6 +25,6 @@ public class RoutingConfig {
             .andRoute(GET("/get-sessions-by-user-id"), sessionService::getSessionsByUserID)
             .andRoute(POST("/refresh-session"), sessionService::refreshSession)
             .andRoute(POST("/delete-session"), sessionService::deleteSession)
-            .andRoute(POST("/delete-sessions-by-user-id"), sessionService::getSessionsByUserID);
+            .andRoute(POST("/delete-sessions-by-user-id"), sessionService::deleteSessionsByUserID);
     }
 }

@@ -11,5 +11,4 @@ public interface SessionService {
     Mono<ServerResponse> refreshSession(ServerRequest request);
     Mono<ServerResponse> deleteSession(ServerRequest request);
     Mono<ServerResponse> deleteSessionsByUserID(ServerRequest request);
-
 }
