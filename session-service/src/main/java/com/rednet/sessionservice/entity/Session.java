@@ -1,27 +1,39 @@
 package com.rednet.sessionservice.entity;
 
+import org.springframework.data.cassandra.core.mapping.Column;
+import org.springframework.data.cassandra.core.mapping.PrimaryKey;
+import org.springframework.data.cassandra.core.mapping.Table;
+
 import java.io.Serializable;
 
+@Table("sessions")
 public class Session implements Serializable {
-    private String userID;
+    @PrimaryKey
+    private SessionKey sessionKey;
+
+    @Column
     private String[] roles;
+
+    @Column("access_token")
     private String accessToken;
+
+    @Column("refresh_token")
     private String refreshToken;
 
     private Session() {}
-    public Session(String userID, String[] roles, String accessToken, String refreshToken) {
-        this.userID = userID;
+    public Session(SessionKey sessionKey, String[] roles, String accessToken, String refreshToken) {
+        this.sessionKey = sessionKey;
         this.roles = roles;
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
     }
 
-    public String getUserID() {
-        return userID;
+    public SessionKey getSessionKey() {
+        return sessionKey;
     }
 
-    public void setUserID(String userID) {
-        this.userID = userID;
+    public void setSessionKey(SessionKey sessionKey) {
+        this.sessionKey = sessionKey;
     }
 
     public String[] getRoles() {

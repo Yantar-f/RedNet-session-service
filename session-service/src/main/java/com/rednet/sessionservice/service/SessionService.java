@@ -1,14 +1,15 @@
 package com.rednet.sessionservice.service;
 
-import org.springframework.web.reactive.function.server.ServerRequest;
-import org.springframework.web.reactive.function.server.ServerResponse;
-import reactor.core.publisher.Mono;
+import com.rednet.sessionservice.entity.Session;
+import com.rednet.sessionservice.payload.request.CreateSessionRequestBody;
+
+import java.util.List;
 
 public interface SessionService {
-    Mono<ServerResponse> createSession(ServerRequest request);
-    Mono<ServerResponse> getSession(ServerRequest request);
-    Mono<ServerResponse> getSessionsByUserID(ServerRequest request);
-    Mono<ServerResponse> refreshSession(ServerRequest request);
-    Mono<ServerResponse> deleteSession(ServerRequest request);
-    Mono<ServerResponse> deleteSessionsByUserID(ServerRequest request);
+    Session createSession(CreateSessionRequestBody requestBody);
+    Session getSession(String sessionID);
+    List<Session> getSessionsByUserID(String userID);
+    Session refreshSession(String refreshToken);
+    boolean deleteSession(String refreshToken);
+    boolean deleteSessionsByUserID(String userID);
 }
