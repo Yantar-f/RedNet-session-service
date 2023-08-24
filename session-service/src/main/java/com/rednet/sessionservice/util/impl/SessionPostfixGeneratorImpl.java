@@ -20,5 +20,4 @@ public class SessionPostfixGeneratorImpl implements SessionPostfixGenerator {
     public int getPostfixLength() {
         return 6;
     }
-
 }

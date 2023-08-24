@@ -23,7 +23,7 @@ public class SessionController {
 
     @PostMapping(path = "/create-session", consumes = APPLICATION_JSON_VALUE)
     public ResponseEntity<Session> createSession(@RequestBody CreateSessionRequestBody requestBody) {
-        return ResponseEntity.ok(sessionService.createSession(requestBody));
+        return ResponseEntity.ok(sessionService.createSession(requestBody.userID(),requestBody.roles()));
     }
 
     @GetMapping("/get-session")
