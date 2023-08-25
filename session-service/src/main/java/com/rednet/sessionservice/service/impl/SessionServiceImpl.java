@@ -103,9 +103,18 @@ public class SessionServiceImpl implements SessionService {
     public void deleteSession(String refreshToken) {
         try {
             Claims claims = jwtUtil.getRefreshTokenParser().parseClaimsJws(refreshToken).getBody();
-            SessionKey key = parseSessionID(claims.get("sid", String.class));
+            String sessionID = claims.get("sid", String.class);
+            SessionKey key = parseSessionID(sessionID);
+
+            Session session = sessionRepository
+                .findById(key)
+                .orElseThrow(() -> new SessionNotFoundException(sessionID));
+
+            if ( ! refreshToken.equals(session.getRefreshToken())) throw new InvalidTokenException();
+
             sessionRepository.deleteById(key);
-        } catch (
+        }
+        catch (
             SignatureException |
             MalformedJwtException |
             ExpiredJwtException |
@@ -114,14 +123,16 @@ public class SessionServiceImpl implements SessionService {
         ) {
             throw new InvalidTokenException();
         }
-
     }
 
     @Override
     public void deleteSessionsByUserID(String userID) {
-        sessionRepository.deleteAllBySessionKey_UserID(userID);
+        if (sessionRepository.existsAllBySessionKey_UserID(userID)) {
+            sessionRepository.deleteAllBySessionKey_UserID(userID);
+        } else {
+            throw new UserSessionsNotFound(userID);
+        }
     }
-
 
     private String generateSessionID(String userID, String sessionPostfix) {
         return new StringBuilder(userID).append(".").append(sessionPostfix).toString();
