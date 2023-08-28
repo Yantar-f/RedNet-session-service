@@ -20,12 +20,16 @@ public class Session implements Serializable {
     @Column("refresh_token")
     private String refreshToken;
 
+    @Column("token_id")
+    private String tokenID;
+
     private Session() {}
-    public Session(SessionKey sessionKey, String[] roles, String accessToken, String refreshToken) {
+    public Session(SessionKey sessionKey, String[] roles, String accessToken, String refreshToken, String tokenID) {
         this.sessionKey = sessionKey;
         this.roles = roles;
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
+        this.tokenID = tokenID;
     }
 
     public SessionKey getSessionKey() {
@@ -58,5 +62,13 @@ public class Session implements Serializable {
 
     public void setRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
+    }
+
+    public String getTokenID() {
+        return tokenID;
+    }
+
+    public void setTokenID(String tokenID) {
+        this.tokenID = tokenID;
     }
 }

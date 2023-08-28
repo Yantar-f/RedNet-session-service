@@ -9,6 +9,7 @@ import com.rednet.sessionservice.repository.SessionRepository;
 import com.rednet.sessionservice.service.SessionService;
 import com.rednet.sessionservice.util.JwtUtil;
 import com.rednet.sessionservice.util.SessionPostfixGenerator;
+import com.rednet.sessionservice.util.TokenIDGenerator;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -23,27 +24,32 @@ public class SessionServiceImpl implements SessionService {
     private final SessionRepository sessionRepository;
     private final JwtUtil jwtUtil;
     private final SessionPostfixGenerator sessionPostfixGenerator;
+    private final TokenIDGenerator tokenIDGenerator;
 
     public SessionServiceImpl(
         SessionRepository sessionRepository,
         JwtUtil jwtUtil,
-        SessionPostfixGenerator sessionPostfixGenerator
+        SessionPostfixGenerator sessionPostfixGenerator,
+        TokenIDGenerator tokenIDGenerator
     ) {
         this.sessionRepository = sessionRepository;
         this.jwtUtil = jwtUtil;
         this.sessionPostfixGenerator = sessionPostfixGenerator;
+        this.tokenIDGenerator = tokenIDGenerator;
     }
 
     @Override
     public Session createSession(String userID, String[] roles) {
         String sessionPostfix = sessionPostfixGenerator.generate();
         String sessionID = generateSessionID(userID,sessionPostfix);
+        String tokenID = tokenIDGenerator.generate();
 
         return sessionRepository.save(new Session(
             new SessionKey(userID, sessionPostfix),
             roles,
-            generateAccessToken(userID,sessionID, roles),
-            generateRefreshToken(userID,sessionID, roles)
+            generateAccessToken(tokenID, userID, sessionID, roles),
+            generateRefreshToken(tokenID, userID, sessionID, roles),
+            tokenID
         ));
     }
 
@@ -69,23 +75,27 @@ public class SessionServiceImpl implements SessionService {
             String sessionID = claims.get("sid", String.class);
             SessionKey key = parseSessionID(sessionID);
 
-            Session session = sessionRepository
-                .findById(key)
-                .orElseThrow(() -> new SessionNotFoundException(sessionID));
+            Session session = sessionRepository.findById(key).orElseThrow(InvalidTokenException::new);
 
-            if ( ! refreshToken.equals(session.getRefreshToken())) throw new InvalidTokenException();
+            if ( ! claims.getId().equals(session.getTokenID())) throw new InvalidTokenException();
 
-            session.setAccessToken(jwtUtil.generateAccessTokenBuilder()
-                .setSubject(session.getSessionKey().getUserID())
-                .claim("sid", sessionID)
-                .claim("roles", session.getRoles())
-                .compact());
+            String tokenID = tokenIDGenerator.generate();
 
-            session.setRefreshToken(jwtUtil.generateRefreshTokenBuilder()
-                .setSubject(session.getSessionKey().getUserID())
-                .claim("sid", sessionID)
-                .claim("roles", session.getRoles())
-                .compact());
+            session.setAccessToken(generateAccessToken(
+                tokenID,
+                session.getSessionKey().getUserID(),
+                sessionID,
+                session.getRoles()
+            ));
+
+            session.setRefreshToken(generateRefreshToken(
+                tokenID,
+                session.getSessionKey().getUserID(),
+                sessionID,
+                session.getRoles()
+            ));
+
+            session.setTokenID(tokenID);
 
             return sessionRepository.save(session);
         } catch (
@@ -108,9 +118,9 @@ public class SessionServiceImpl implements SessionService {
 
             Session session = sessionRepository
                 .findById(key)
-                .orElseThrow(() -> new SessionNotFoundException(sessionID));
+                .orElseThrow(InvalidTokenException::new);
 
-            if ( ! refreshToken.equals(session.getRefreshToken())) throw new InvalidTokenException();
+            if ( ! claims.getId().equals(session.getTokenID())) throw new InvalidTokenException();
 
             sessionRepository.deleteById(key);
         }
@@ -150,16 +160,18 @@ public class SessionServiceImpl implements SessionService {
         );
     }
 
-    private String generateRefreshToken(String userID, String sessionID, String[] roles) {
+    private String generateRefreshToken(String tokenID, String userID, String sessionID, String[] roles) {
         return jwtUtil.generateRefreshTokenBuilder()
+            .setId(tokenID)
             .setSubject(userID)
             .claim("roles", roles)
             .claim("sid", sessionID)
             .compact();
     }
 
-    private String generateAccessToken(String userID, String sessionID, String[] roles) {
+    private String generateAccessToken(String tokenID, String userID, String sessionID, String[] roles) {
         return jwtUtil.generateAccessTokenBuilder()
+            .setId(tokenID)
             .setSubject(userID)
             .claim("roles", roles)
             .claim("sid", sessionID)
