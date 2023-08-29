@@ -1,10 +1,13 @@
 package com.rednet.sessionservice.entity;
 
+import org.springframework.data.cassandra.core.mapping.CassandraType;
 import org.springframework.data.cassandra.core.mapping.Column;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
 import org.springframework.data.cassandra.core.mapping.Table;
 
 import java.io.Serializable;
+
+import static org.springframework.data.cassandra.core.mapping.CassandraType.Name.*;
 
 @Table("sessions")
 public class Session implements Serializable {
@@ -12,6 +15,7 @@ public class Session implements Serializable {
     private SessionKey sessionKey;
 
     @Column
+    @CassandraType(typeArguments = TEXT , type = LIST)
     private String[] roles;
 
     @Column("access_token")

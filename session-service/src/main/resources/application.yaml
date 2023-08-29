@@ -5,8 +5,10 @@ server:
         include-binding-errors: always
 spring:
     cassandra:
-        port: 9042
-        contact-points: localhost
+        contact-points: localhost:9042
+        local-datacenter: datacenter1
+        keyspace-name: sessionsSpace
+        schema-action: create_if_not_exists
 rednet:
     app:
         access-token-expiration-ms: 60000

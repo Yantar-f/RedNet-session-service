@@ -39,7 +39,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().authenticated())
+                    .anyRequest().permitAll())
+                    //.anyRequest().authenticated())
             .exceptionHandling(exHandle -> exHandle
                 .accessDeniedHandler(accessDeniedHandler)
                 .authenticationEntryPoint(authenticationEntryPoint))

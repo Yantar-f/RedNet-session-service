@@ -10,6 +10,7 @@ import java.util.List;
 @Repository
 public interface SessionRepository extends CassandraRepository<Session, SessionKey> {
     List<Session> findAllBySessionKey_UserID(String userID);
+
     void deleteAllBySessionKey_UserID(String userID);
     boolean existsAllBySessionKey_UserID(String userID);
 }
