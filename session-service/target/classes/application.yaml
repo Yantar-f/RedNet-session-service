@@ -7,7 +7,7 @@ spring:
     cassandra:
         contact-points: localhost:9042
         local-datacenter: datacenter1
-        keyspace-name: sessionsSpace
+        keyspace-name: sessionkeyspace
         schema-action: create_if_not_exists
 rednet:
     app:
@@ -16,6 +16,7 @@ rednet:
         api-token-issuer: rednet-agw
         api-token-secret-key: 301RJdFDpzEchd3y+4O7GUl3Ade2PNyyDtUx76AdPWpe0uYUW47MON9jtEUOmod9
         api-token-cookie-name: rednet-api-token
+        refresh-token-expiration-s: 172800
         refresh-token-expiration-ms: 172800000
         refresh-token-secret-key: a1yTJjPn3+N8p7y3bANWFg+mOpQH6WWrSfKq2NM4f9YFNsKK8U4VRx6Godo3OeEf
         auth-token-issuer: rednet-auth
