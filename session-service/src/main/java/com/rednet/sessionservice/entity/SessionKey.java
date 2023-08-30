@@ -1,17 +1,9 @@
 package com.rednet.sessionservice.entity;
 
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyClass;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 
-import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.CLUSTERED;
-import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.PARTITIONED;
-
-@PrimaryKeyClass
 public class SessionKey {
-    @PrimaryKeyColumn(name = "user_id", type = PARTITIONED)
     private String userID;
 
-    @PrimaryKeyColumn(name = "session_postfix", type = CLUSTERED)
     private String sessionPostfix;
 
 

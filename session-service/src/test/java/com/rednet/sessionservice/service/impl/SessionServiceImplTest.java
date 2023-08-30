@@ -69,8 +69,8 @@ class SessionServiceImplTest {
     static class SessionComparator {
         public static boolean compare(Session session1, Session session2) {
             if (
-                session1.getSessionKey().getUserID().equals(session2.getSessionKey().getUserID()) &&
-                session1.getSessionKey().getSessionPostfix().equals(session2.getSessionKey().getSessionPostfix()) &&
+                session1.getUserID().equals(session2.getUserID()) &&
+                session1.getSessionPostfix().equals(session2.getSessionPostfix()) &&
                 session1.getRoles().length == session2.getRoles().length &&
                 session1.getAccessToken().equals(session2.getAccessToken()) &&
                 session1.getRefreshToken().equals(session2.getRefreshToken()) &&

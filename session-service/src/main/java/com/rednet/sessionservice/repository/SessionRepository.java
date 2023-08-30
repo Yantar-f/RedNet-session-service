@@ -1,16 +1,15 @@
 package com.rednet.sessionservice.repository;
 
 import com.rednet.sessionservice.entity.Session;
-import com.rednet.sessionservice.entity.SessionKey;
-import org.springframework.data.cassandra.repository.CassandraRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
-@Repository
-public interface SessionRepository extends CassandraRepository<Session, SessionKey> {
-    List<Session> findAllBySessionKey_UserID(String userID);
-
-    void deleteAllBySessionKey_UserID(String userID);
-    boolean existsAllBySessionKey_UserID(String userID);
+public interface SessionRepository {
+    Optional<Session> findByID(String userID, String sessionPostfix);
+    List<Session> findAllByUserID(String userID);
+    Session insert(Session session);
+    boolean deleteByID(String userID, String sessionPostfix);
+    boolean deleteAllByUserID(String userID);
+    boolean existsByUserID(String userID);
 }

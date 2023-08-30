@@ -3,10 +3,16 @@ package com.rednet.sessionservice.controller;
 import com.rednet.sessionservice.entity.Session;
 import com.rednet.sessionservice.payload.request.CreateSessionRequestBody;
 import com.rednet.sessionservice.payload.request.DeleteSessionRequestBody;
+import com.rednet.sessionservice.payload.request.RefreshSessionRequestBody;
 import com.rednet.sessionservice.payload.response.SimpleResponseBody;
 import com.rednet.sessionservice.service.SessionService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -34,6 +40,11 @@ public class SessionController {
     @GetMapping("/get-sessions-by-user-id")
     public ResponseEntity<List<Session>> getSessionsByUserID(@RequestParam("user-id") String userID) {
         return ResponseEntity.ok(sessionService.getSessionsByUserID(userID));
+    }
+
+    @PostMapping("/refresh-session")
+    public ResponseEntity<Session> refreshSession(@RequestBody RefreshSessionRequestBody requestBody) {
+        return ResponseEntity.ok(sessionService.refreshSession(requestBody.refreshToken()));
     }
 
     @PostMapping(path = "delete-session", consumes = APPLICATION_JSON_VALUE)

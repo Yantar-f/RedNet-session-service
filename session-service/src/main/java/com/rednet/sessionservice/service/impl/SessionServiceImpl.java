@@ -4,7 +4,9 @@ import com.rednet.sessionservice.entity.Session;
 import com.rednet.sessionservice.entity.SessionKey;
 import com.rednet.sessionservice.exception.impl.InvalidTokenException;
 import com.rednet.sessionservice.exception.impl.SessionNotFoundException;
+import com.rednet.sessionservice.exception.impl.SessionRemovingException;
 import com.rednet.sessionservice.exception.impl.UserSessionsNotFound;
+import com.rednet.sessionservice.exception.impl.UserSessionsRemovingException;
 import com.rednet.sessionservice.repository.SessionRepository;
 import com.rednet.sessionservice.service.SessionService;
 import com.rednet.sessionservice.util.JwtUtil;
@@ -17,6 +19,7 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -44,8 +47,10 @@ public class SessionServiceImpl implements SessionService {
         String sessionID = generateSessionID(userID,sessionPostfix);
         String tokenID = tokenIDGenerator.generate();
 
-        return sessionRepository.save(new Session(
-            new SessionKey(userID, sessionPostfix),
+        return sessionRepository.insert(new Session(
+            userID,
+            sessionPostfix,
+            new Date(),
             roles,
             generateAccessToken(tokenID, userID, sessionID, roles),
             generateRefreshToken(tokenID, userID, sessionID, roles),
@@ -56,12 +61,15 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public Session getSession(String sessionID) {
         SessionKey key = parseSessionID(sessionID);
-        return sessionRepository.findById(key).orElseThrow(() -> new SessionNotFoundException(sessionID));
+
+        return sessionRepository
+            .findByID(key.getUserID(), key.getSessionPostfix())
+            .orElseThrow(() -> new SessionNotFoundException(sessionID));
     }
 
     @Override
     public List<Session> getSessionsByUserID(String userID) {
-        List<Session> sessions = sessionRepository.findAllBySessionKey_UserID(userID);
+        List<Session> sessions = sessionRepository.findAllByUserID(userID);
 
         if (sessions.isEmpty()) throw new UserSessionsNotFound(userID);
 
@@ -75,7 +83,9 @@ public class SessionServiceImpl implements SessionService {
             String sessionID = claims.get("sid", String.class);
             SessionKey key = parseSessionID(sessionID);
 
-            Session session = sessionRepository.findById(key).orElseThrow(InvalidTokenException::new);
+            Session session = sessionRepository
+                .findByID(key.getUserID(), key.getSessionPostfix())
+                .orElseThrow(InvalidTokenException::new);
 
             if ( ! claims.getId().equals(session.getTokenID())) throw new InvalidTokenException();
 
@@ -83,21 +93,24 @@ public class SessionServiceImpl implements SessionService {
 
             session.setAccessToken(generateAccessToken(
                 tokenID,
-                session.getSessionKey().getUserID(),
+                session.getUserID(),
                 sessionID,
                 session.getRoles()
             ));
 
             session.setRefreshToken(generateRefreshToken(
                 tokenID,
-                session.getSessionKey().getUserID(),
+                session.getUserID(),
                 sessionID,
                 session.getRoles()
             ));
 
             session.setTokenID(tokenID);
+            session.setCreatedAt(new Date());
 
-            return sessionRepository.save(session);
+            sessionRepository.deleteByID(session.getUserID(), session.getSessionPostfix());
+
+            return sessionRepository.insert(session);
         } catch (
             SignatureException |
             MalformedJwtException |
@@ -117,12 +130,14 @@ public class SessionServiceImpl implements SessionService {
             SessionKey key = parseSessionID(sessionID);
 
             Session session = sessionRepository
-                .findById(key)
+                .findByID(key.getUserID(), key.getSessionPostfix())
                 .orElseThrow(InvalidTokenException::new);
 
             if ( ! claims.getId().equals(session.getTokenID())) throw new InvalidTokenException();
 
-            sessionRepository.deleteById(key);
+            if ( ! sessionRepository.deleteByID(key.getUserID(), key.getSessionPostfix())) {
+                throw new SessionRemovingException(sessionID);
+            }
         }
         catch (
             SignatureException |
@@ -137,8 +152,10 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public void deleteSessionsByUserID(String userID) {
-        if (sessionRepository.existsAllBySessionKey_UserID(userID)) {
-            sessionRepository.deleteAllBySessionKey_UserID(userID);
+        if (sessionRepository.existsByUserID(userID)) {
+            if ( ! sessionRepository.deleteAllByUserID(userID)) {
+                throw new UserSessionsRemovingException(userID);
+            }
         } else {
             throw new UserSessionsNotFound(userID);
         }
