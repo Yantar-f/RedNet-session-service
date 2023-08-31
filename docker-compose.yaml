@@ -1,20 +1,18 @@
 version: "3.0"
 
 services:
-    cassandra:
-        container_name: rednet-session-service-cassandra-sessions
-        image: redis
+    sessions-db:
+        container_name: rednet-session-service-db
+        image: cassandra
         ports:
-            - "6379:6379"
+            - "9042:9042"
         networks:
             - rednet-network
-    api:
+    session-service:
         container_name: rednet-session-service
         build: ./session-service
-        ports:
-            - "8002:8002"
         depends_on:
-            - cassandra
+            - sessions-db
         restart: unless-stopped
         networks:
             - rednet-network

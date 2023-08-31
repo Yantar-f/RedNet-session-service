@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.rednet.sessionservice.service.impl.SessionServiceImplTest
 -------------------------------------------------------------------------------
-Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.345 s - in com.rednet.sessionservice.service.impl.SessionServiceImplTest
+Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.383 s - in com.rednet.sessionservice.service.impl.SessionServiceImplTest
