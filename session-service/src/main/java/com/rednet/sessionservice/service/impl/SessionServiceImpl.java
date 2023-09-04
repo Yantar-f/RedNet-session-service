@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SessionServiceImpl implements SessionService {
@@ -60,7 +61,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public Session getSession(String sessionID) {
-        SessionKey key = parseSessionID(sessionID);
+        SessionKey key = parseSessionID(sessionID).orElseThrow(() -> new SessionNotFoundException(sessionID));
 
         return sessionRepository
             .findByID(key.getUserID(), key.getSessionPostfix())
@@ -81,7 +82,7 @@ public class SessionServiceImpl implements SessionService {
         try {
             Claims claims = jwtUtil.getRefreshTokenParser().parseClaimsJws(refreshToken).getBody();
             String sessionID = claims.get("sid", String.class);
-            SessionKey key = parseSessionID(sessionID);
+            SessionKey key = parseSessionID(sessionID).orElseThrow(InvalidTokenException::new);
 
             Session session = sessionRepository
                 .findByID(key.getUserID(), key.getSessionPostfix())
@@ -127,7 +128,7 @@ public class SessionServiceImpl implements SessionService {
         try {
             Claims claims = jwtUtil.getRefreshTokenParser().parseClaimsJws(refreshToken).getBody();
             String sessionID = claims.get("sid", String.class);
-            SessionKey key = parseSessionID(sessionID);
+            SessionKey key = parseSessionID(sessionID).orElseThrow(InvalidTokenException::new);
 
             Session session = sessionRepository
                 .findByID(key.getUserID(), key.getSessionPostfix())
@@ -165,16 +166,16 @@ public class SessionServiceImpl implements SessionService {
         return new StringBuilder(userID).append(".").append(sessionPostfix).toString();
     }
 
-    private SessionKey parseSessionID(String sessionID) {
-        if (sessionID.length() < sessionPostfixGenerator.getPostfixLength() + 2) throw new InvalidTokenException();
+    private Optional<SessionKey> parseSessionID(String sessionID) {
+        if (sessionID.length() < sessionPostfixGenerator.getPostfixLength() + 2) return Optional.empty();
 
         StringBuilder builder = new StringBuilder(sessionID);
         int separatorIndex = builder.length() - 1 - sessionPostfixGenerator.getPostfixLength();
 
-        return new SessionKey(
+        return Optional.of(new SessionKey(
             builder.substring(0,separatorIndex),
             builder.substring(separatorIndex + 1)
-        );
+        ));
     }
 
     private String generateRefreshToken(String tokenID, String userID, String sessionID, String[] roles) {

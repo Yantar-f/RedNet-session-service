@@ -1,5 +1,5 @@
 server:
-    port: 0
+    port: 8080
     error:
         include-message: always
         include-binding-errors: always
@@ -7,14 +7,14 @@ spring:
     application:
         name: SESSION-SERVICE
     cassandra:
-        contact-points: sessions-db:9042
+        contact-points: localhost:9042
         local-datacenter: datacenter1
         keyspace-name: sessionkeyspace
         schema-action: create_if_not_exists
 eureka:
     client:
         service-url:
-            defaultZone: ${EUREKA_URI:http://service-discovery:8761/eureka}
+            defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
 rednet:
     app:
         access-token-expiration-ms: 60000

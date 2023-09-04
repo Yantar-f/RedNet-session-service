@@ -9,9 +9,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 @EnableDiscoveryClient
 @SpringBootApplication(exclude = {SecurityAutoConfiguration.class, UserDetailsServiceAutoConfiguration.class})
 public class SessionServiceApplication {
-
     public static void main(String[] args) {
         SpringApplication.run(SessionServiceApplication.class, args);
     }
-
 }
