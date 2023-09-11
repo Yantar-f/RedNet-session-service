@@ -19,7 +19,7 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,7 +51,7 @@ public class SessionServiceImpl implements SessionService {
         return sessionRepository.insert(new Session(
             userID,
             sessionPostfix,
-            new Date(),
+            Instant.now(),
             roles,
             generateAccessToken(tokenID, userID, sessionID, roles),
             generateRefreshToken(tokenID, userID, sessionID, roles),
@@ -107,7 +107,7 @@ public class SessionServiceImpl implements SessionService {
             ));
 
             session.setTokenID(tokenID);
-            session.setCreatedAt(new Date());
+            session.setCreatedAt(Instant.now());
 
             sessionRepository.deleteByID(session.getUserID(), session.getSessionPostfix());
 

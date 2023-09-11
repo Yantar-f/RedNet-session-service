@@ -1,11 +1,7 @@
 package com.rednet.sessionservice.exception.impl;
 
-import com.rednet.sessionservice.exception.BadRequestException;
-
-import java.util.List;
-
-public class InvalidTokenException extends BadRequestException {
+public class InvalidTokenException extends RuntimeException {
     public InvalidTokenException() {
-        super(List.of("invalid token"));
+        super("invalid token");
     }
 }

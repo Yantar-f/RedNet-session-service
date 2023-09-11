@@ -30,7 +30,7 @@ public class ApiTokenFilter extends OncePerRequestFilter {
     private final JwtParser apiTokenParser;
 
     public ApiTokenFilter(
-        @Value("${rednet.app.api-token-cookie-name}") String apiTokenCookieName,
+        @Value("${rednet.app.security.api-token.cookie-name}") String apiTokenCookieName,
         JwtUtil jwtUtil
     ) {
         this.apiTokenCookieName = apiTokenCookieName;
@@ -79,9 +79,9 @@ public class ApiTokenFilter extends OncePerRequestFilter {
             UnsupportedJwtException |
             IllegalArgumentException e
         ) {
-            ///
-            System.out.println("Invalid token");
-            ///
+            /*
+            * LOG EVENT
+             */
         }
 
         filterChain.doFilter(request,response);

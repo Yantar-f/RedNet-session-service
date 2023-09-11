@@ -40,10 +40,8 @@ public class SecurityConfig {
             .cors(CorsConfigurer::disable)
             .httpBasic(HttpBasicConfigurer::disable)
             .formLogin(FormLoginConfigurer::disable)
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                    .anyRequest().permitAll())
+            .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
             .exceptionHandling(exHandle -> exHandle
                 .accessDeniedHandler(accessDeniedHandler)
                 .authenticationEntryPoint(authenticationEntryPoint))

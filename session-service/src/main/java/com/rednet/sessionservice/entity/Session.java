@@ -7,13 +7,14 @@ import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.core.mapping.Table;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.Instant;
 
 import static org.springframework.data.cassandra.core.cql.Ordering.DESCENDING;
 import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.CLUSTERED;
 import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.PARTITIONED;
 import static org.springframework.data.cassandra.core.mapping.CassandraType.Name.LIST;
 import static org.springframework.data.cassandra.core.mapping.CassandraType.Name.TEXT;
+import static org.springframework.data.cassandra.core.mapping.CassandraType.Name.TIMESTAMP;
 
 @Table("sessions")
 public class Session implements Serializable {
@@ -24,7 +25,8 @@ public class Session implements Serializable {
     private String sessionPostfix;
 
     @PrimaryKeyColumn(name = "created_at", type = CLUSTERED, ordering = DESCENDING, ordinal = 1)
-    private Date createdAt;
+    @CassandraType(type = TIMESTAMP)
+    private Instant createdAt;
 
     @Column
     @CassandraType(typeArguments = TEXT , type = LIST)
@@ -46,7 +48,8 @@ public class Session implements Serializable {
     public Session(
         String userID,
         String sessionPostfix,
-        Date createdAt, String[] roles,
+        Instant createdAt,
+        String[] roles,
         String accessToken,
         String refreshToken,
         String tokenID
@@ -58,6 +61,7 @@ public class Session implements Serializable {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.tokenID = tokenID;
+
     }
 
     public String getUserID() {
@@ -108,11 +112,11 @@ public class Session implements Serializable {
         this.tokenID = tokenID;
     }
 
-    public Date getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Date createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 }

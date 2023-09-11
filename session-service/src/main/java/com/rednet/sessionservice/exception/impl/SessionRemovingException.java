@@ -1,11 +1,7 @@
 package com.rednet.sessionservice.exception.impl;
 
-import com.rednet.sessionservice.exception.BadRequestException;
-
-import java.util.List;
-
-public class SessionRemovingException extends BadRequestException {
+public class SessionRemovingException extends RuntimeException {
     public SessionRemovingException(String sessionID) {
-        super(List.of("error removing session " + sessionID));
+        super("error removing session " + sessionID);
     }
 }

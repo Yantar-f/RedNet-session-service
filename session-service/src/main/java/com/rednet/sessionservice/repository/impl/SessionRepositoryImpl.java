@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.springframework.data.cassandra.core.query.Criteria.where;
 import static org.springframework.data.cassandra.core.query.Query.query;
 
@@ -20,10 +21,13 @@ public class SessionRepositoryImpl implements SessionRepository {
 
     public SessionRepositoryImpl(
         CassandraOperations operations,
-        @Value("${rednet.app.refresh-token-expiration-s}") int refreshTokenExpirationS
+        @Value("${rednet.app.security.refresh-token.expiration-ms}") long refreshTokenExpirationMs
     ) {
         this.operations = operations;
-        this.insertOptions = InsertOptions.builder().ttl(refreshTokenExpirationS).build();
+
+        this.insertOptions = InsertOptions.builder()
+            .ttl((int) MILLISECONDS.toSeconds(refreshTokenExpirationMs) + 10)
+            .build();
     }
 
     @Override

@@ -3,6 +3,7 @@ server:
     error:
         include-message: always
         include-binding-errors: always
+        include-stacktrace: never
 spring:
     application:
         name: SESSION-SERVICE
@@ -10,19 +11,11 @@ spring:
         contact-points: localhost:9042
         local-datacenter: datacenter1
         keyspace-name: sessionkeyspace
-        schema-action: create_if_not_exists
-eureka:
-    client:
-        service-url:
-            defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
-rednet:
-    app:
-        access-token-expiration-ms: 60000
-        access-token-secret-key: suF25ZudSgyzQSS9QgpaSyUt5XZZGtTayc22RlLe5IX1erTOz64mN5BarqeiPV2s
-        api-token-issuer: rednet-agw
-        api-token-secret-key: 301RJdFDpzEchd3y+4O7GUl3Ade2PNyyDtUx76AdPWpe0uYUW47MON9jtEUOmod9
-        api-token-cookie-name: rednet-api-token
-        refresh-token-expiration-s: 172800
-        refresh-token-expiration-ms: 172800000
-        refresh-token-secret-key: a1yTJjPn3+N8p7y3bANWFg+mOpQH6WWrSfKq2NM4f9YFNsKK8U4VRx6Godo3OeEf
-        auth-token-issuer: rednet-auth
+        schema-action: recreate
+    cloud:
+        config:
+            fail-fast: true
+            name: discovery-client-config,api-token-config,access-token-config,refresh-token-config
+            uri: http://localhost:8888
+    config:
+        import: 'configserver:'
