@@ -7,6 +7,7 @@ import com.rednet.sessionservice.exception.impl.UserSessionsNotFound;
 import com.rednet.sessionservice.exception.impl.UserSessionsRemovingException;
 import com.rednet.sessionservice.exception.ErrorResponseMessage;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
@@ -15,6 +16,8 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.lang.NonNull;
+import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -30,7 +33,6 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.time.Instant;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -42,121 +44,121 @@ import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
-    @ParametersAreNonnullByDefault
     protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(
-        HttpRequestMethodNotSupportedException ex,
-        HttpHeaders headers,
-        HttpStatusCode status,
-        WebRequest request
+        @NonNull HttpRequestMethodNotSupportedException ex,
+        @NonNull HttpHeaders headers,
+        @NonNull HttpStatusCode status,
+        @NonNull WebRequest request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
     }
 
     @Override
-    @ParametersAreNonnullByDefault
     protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(
-        HttpMediaTypeNotSupportedException ex,
-        HttpHeaders headers,
-        HttpStatusCode status,
-        WebRequest request
+        @NonNull HttpMediaTypeNotSupportedException ex,
+        @NonNull HttpHeaders headers,
+        @NonNull HttpStatusCode status,
+        @NonNull WebRequest request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
     }
 
     @Override
-    @ParametersAreNonnullByDefault
     protected ResponseEntity<Object> handleHttpMediaTypeNotAcceptable(
-        HttpMediaTypeNotAcceptableException ex,
-        HttpHeaders headers,
-        HttpStatusCode status,
-        WebRequest request
+        @NonNull HttpMediaTypeNotAcceptableException ex,
+        @NonNull HttpHeaders headers,
+        @NonNull HttpStatusCode status,
+        @NonNull WebRequest request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
     }
 
     @Override
-    @ParametersAreNonnullByDefault
     protected ResponseEntity<Object> handleMissingServletRequestParameter(
-        MissingServletRequestParameterException ex,
-        HttpHeaders headers,
-        HttpStatusCode status,
-        WebRequest request
+        @NonNull MissingServletRequestParameterException ex,
+        @NonNull HttpHeaders headers,
+        @NonNull HttpStatusCode status,
+        @NonNull WebRequest request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
     }
 
     @Override
-    @ParametersAreNonnullByDefault
     protected ResponseEntity<Object> handleMissingServletRequestPart(
-        MissingServletRequestPartException ex,
-        HttpHeaders headers,
-        HttpStatusCode status,
-        WebRequest request
+        @NonNull MissingServletRequestPartException ex,
+        @NonNull HttpHeaders headers,
+        @NonNull HttpStatusCode status,
+        @NonNull WebRequest request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
     }
 
     @Override
-    @ParametersAreNonnullByDefault
     protected ResponseEntity<Object> handleServletRequestBindingException(
-        ServletRequestBindingException ex,
-        HttpHeaders headers,
-        HttpStatusCode status,
-        WebRequest request
+        @NonNull ServletRequestBindingException ex,
+        @NonNull HttpHeaders headers,
+        @NonNull HttpStatusCode status,
+        @NonNull WebRequest request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
     }
 
     @Override
-    @ParametersAreNonnullByDefault
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
-        MethodArgumentNotValidException ex,
-        HttpHeaders headers,
-        HttpStatusCode status,
-        WebRequest request
+        @NonNull MethodArgumentNotValidException ex,
+        @NonNull HttpHeaders headers,
+        @NonNull HttpStatusCode status,
+        @NonNull WebRequest request
     ) {
-        return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
+        FieldError fieldError = ex.getBindingResult().getFieldError();
+        String errorMessage = fieldError != null ? fieldError.getDefaultMessage() : "undefined constraint violation";
+
+        return generateErrorResponse(BAD_REQUEST, extractPath(request), errorMessage);
     }
 
     @Override
-    @ParametersAreNonnullByDefault
     protected ResponseEntity<Object> handleNoHandlerFoundException(
-        NoHandlerFoundException ex,
-        HttpHeaders headers,
-        HttpStatusCode status,
-        WebRequest request
+        @NonNull NoHandlerFoundException ex,
+        @NonNull HttpHeaders headers,
+        @NonNull HttpStatusCode status,
+        @NonNull WebRequest request
     ) {
         return generateErrorResponse(NOT_FOUND, extractPath(request), ex.getMessage());
     }
 
     @Override
-    @ParametersAreNonnullByDefault
     protected ResponseEntity<Object> handleAsyncRequestTimeoutException(
-        AsyncRequestTimeoutException ex,
-        HttpHeaders headers,
-        HttpStatusCode status,
-        WebRequest request
+        @NonNull AsyncRequestTimeoutException ex,
+        @NonNull HttpHeaders headers,
+        @NonNull HttpStatusCode status,
+        @NonNull WebRequest request
     ) {
         return generateErrorResponse(SERVICE_UNAVAILABLE, extractPath(request), ex.getMessage());
     }
 
     @Override
-    @ParametersAreNonnullByDefault
     protected ResponseEntity<Object> handleHttpMessageNotWritable(
-        HttpMessageNotWritableException ex,
-        HttpHeaders headers,
-        HttpStatusCode status,
-        WebRequest request
+        @NonNull HttpMessageNotWritableException ex,
+        @NonNull HttpHeaders headers,
+        @NonNull HttpStatusCode status,
+        @NonNull WebRequest request
     ) {
         return generateErrorResponse(INTERNAL_SERVER_ERROR, extractPath(request), ex.getMessage());
     }
 
     @Override
-    @ParametersAreNonnullByDefault
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
-        HttpMessageNotReadableException ex,
-        HttpHeaders headers,
-        HttpStatusCode status,
+        @NonNull HttpMessageNotReadableException ex,
+        @NonNull HttpHeaders headers,
+        @NonNull HttpStatusCode status,
+        @NonNull WebRequest request
+    ) {
+        return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    protected ResponseEntity<Object> handleConstraintViolationException(
+        ConstraintViolationException ex,
         WebRequest request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
