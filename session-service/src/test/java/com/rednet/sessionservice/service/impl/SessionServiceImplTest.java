@@ -17,6 +17,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -47,7 +48,7 @@ class SessionServiceImplTest {
         refreshTokenSecretKey = "a1yTJjPn3+N8p7y3bANWFg+mOpQH6WWrSfKq2NM4f9YFNsKK8U4VRx6Godo3OeEf";
 
     String[] expectedRoles = new String[]{"role"};
-    Date expectedCreatedAt = new Date();
+    Instant expectedCreatedAt = Instant.now();
 
     JwtParser accessTokenParser = Jwts.parserBuilder()
         .setSigningKey(Keys.hmacShaKeyFor(BASE64.decode(accessTokenSecretKey)))
@@ -194,7 +195,7 @@ class SessionServiceImplTest {
             session1 = new Session(
                 expectedUserID,
                 "1111",
-                new Date(),
+                Instant.now(),
                 new String[]{"role1", "role2"},
                 "a-token1",
                 "r-token1",
@@ -204,7 +205,7 @@ class SessionServiceImplTest {
             session2 = new Session(
                 expectedUserID,
                 "1112",
-                new Date(),
+                Instant.now(),
                 new String[]{"role"},
                 "a-token2",
                 "r-token2",
@@ -282,7 +283,7 @@ class SessionServiceImplTest {
             assertEquals(expectedUserID, newSession.getUserID());
             assertEquals(sessionPostfix, newSession.getSessionPostfix());
             assertEquals(expectedTokenID, newSession.getTokenID());
-            assertTrue(expectedCreatedAt.before(newSession.getCreatedAt()));
+            assertTrue(expectedCreatedAt.isBefore(newSession.getCreatedAt()));
             assertTrue(compareStringArraysContent(expectedRoles, newSession.getRoles()));
 
             assertDoesNotThrow(() -> {
