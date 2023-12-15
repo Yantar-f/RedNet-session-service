@@ -1,0 +1,21 @@
+version: "3.0"
+
+services:
+    sessions-db:
+        container_name: rednet-session-service-db
+        image: cassandra
+        ports:
+            - "9042:9042"
+        networks:
+            - rednet-network
+    session-service:
+        container_name: rednet-session-service
+        build: ./session-service
+        depends_on:
+            - sessions-db
+        restart: unless-stopped
+        networks:
+            - rednet-network
+networks:
+    rednet-network:
+        external: true

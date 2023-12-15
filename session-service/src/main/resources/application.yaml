@@ -1,0 +1,21 @@
+server:
+    port: 8080
+    error:
+        include-message: always
+        include-binding-errors: always
+        include-stacktrace: never
+spring:
+    application:
+        name: SESSION-SERVICE
+    cassandra:
+        contact-points: localhost:9042
+        local-datacenter: datacenter1
+        keyspace-name: sessionkeyspace
+        schema-action: recreate
+    cloud:
+        config:
+            fail-fast: true
+            name: discovery-client-config,api-token-config,access-token-config,refresh-token-config
+            uri: http://localhost:8888
+    config:
+        import: 'configserver:'
