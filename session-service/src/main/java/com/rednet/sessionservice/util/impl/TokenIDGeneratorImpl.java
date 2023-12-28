@@ -15,9 +15,4 @@ public class TokenIDGeneratorImpl implements TokenIDGenerator {
     public String generate() {
         return String.valueOf(random.nextInt(rangeMax - rangeMin) + rangeMin);
     }
-
-    @Override
-    public int getIDLength() {
-        return 6;
-    }
 }

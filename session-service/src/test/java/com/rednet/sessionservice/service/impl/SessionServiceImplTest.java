@@ -4,11 +4,12 @@ import com.rednet.sessionservice.entity.Session;
 import com.rednet.sessionservice.exception.impl.InvalidTokenException;
 import com.rednet.sessionservice.exception.impl.SessionNotFoundException;
 import com.rednet.sessionservice.exception.impl.SessionRemovingException;
-import com.rednet.sessionservice.exception.impl.UserSessionsNotFound;
+import com.rednet.sessionservice.exception.impl.UserSessionsNotFoundException;
 import com.rednet.sessionservice.exception.impl.UserSessionsRemovingException;
+import com.rednet.sessionservice.model.SessionID;
 import com.rednet.sessionservice.repository.SessionRepository;
 import com.rednet.sessionservice.util.JwtUtil;
-import com.rednet.sessionservice.util.SessionPostfixGenerator;
+import com.rednet.sessionservice.util.SessionKeyGenerator;
 import com.rednet.sessionservice.util.TokenIDGenerator;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
@@ -38,9 +39,11 @@ import static org.mockito.Mockito.*;
 class SessionServiceImplTest {
     int         sessionPostfixLength = 4;
     String      expectedUserID = "user";
-    String      sessionPostfix = "1234";
+    String      expectedSessionPostfix = "1234";
     String      expectedTokenID = "4321";
-    String      expectedSessionID = expectedUserID + '.' + sessionPostfix;
+    String      expectedSessionID = expectedUserID + '.' + expectedSessionPostfix;
+    String      expectedAccessToken = "a-token";
+    String      expectedRefreshToken = "r-token";
     String      accessTokenSecretKey = "suF25ZudSgyzQSS9QgpaSyUt5XZZGtTayc22RlLe5IX1erTOz64mN5BarqeiPV2s";
     String      refreshTokenSecretKey = "a1yTJjPn3+N8p7y3bANWFg+mOpQH6WWrSfKq2NM4f9YFNsKK8U4VRx6Godo3OeEf";
     String[]    expectedRoles = new String[]{"role"};
@@ -56,13 +59,13 @@ class SessionServiceImplTest {
 
     SessionRepository       sessionRepository = mock(SessionRepository.class);
     JwtUtil                 jwtUtil = mock(JwtUtil.class);
-    SessionPostfixGenerator sessionPostfixGenerator = mock(SessionPostfixGenerator.class);
+    SessionKeyGenerator sessionKeyGenerator = mock(SessionKeyGenerator.class);
     TokenIDGenerator        tokenIDGenerator = mock(TokenIDGenerator.class);
 
     SessionServiceImpl sut = new SessionServiceImpl(
         sessionRepository,
         jwtUtil,
-        sessionPostfixGenerator,
+            sessionKeyGenerator,
         tokenIDGenerator
     );
 
@@ -70,14 +73,14 @@ class SessionServiceImplTest {
     void createSession() {
         when(jwtUtil.generateAccessTokenBuilder()).thenReturn(generateTestAccessTokenBuilder());
         when(jwtUtil.generateRefreshTokenBuilder()).thenReturn(generateTestRefreshTokenBuilder());
-        when(sessionPostfixGenerator.generate()).thenReturn(sessionPostfix);
+        when(sessionKeyGenerator.generate()).thenReturn(expectedSessionPostfix);
         when(tokenIDGenerator.generate()).thenReturn(expectedTokenID);
         when(sessionRepository.insert(any(Session.class))).then(returnsFirstArg());
 
         Session actualSession = sut.createSession(expectedUserID, expectedRoles);
 
         assertEquals(expectedUserID, actualSession.getUserID());
-        assertEquals(sessionPostfix, actualSession.getSessionPostfix());
+        assertEquals(expectedSessionPostfix, actualSession.getSessionKey());
         assertEquals(expectedRoles.length, actualSession.getRoles().length);
         assertEquals(expectedTokenID, actualSession.getTokenID());
         assertTrue(compareStringArraysContent(expectedRoles, actualSession.getRoles()));
@@ -108,12 +111,12 @@ class SessionServiceImplTest {
 
         verify(jwtUtil).generateAccessTokenBuilder();
         verify(jwtUtil).generateRefreshTokenBuilder();
-        verify(sessionPostfixGenerator).generate();
+        verify(sessionKeyGenerator).generate();
         verify(tokenIDGenerator).generate();
 
         verify(sessionRepository).insert(argThat(session ->
             session.getUserID().equals(expectedUserID) &&
-            session.getSessionPostfix().equals(sessionPostfix) &&
+            session.getSessionKey().equals(expectedSessionPostfix) &&
             compareStringArraysContent(expectedRoles, session.getRoles())
         ));
     }
@@ -122,7 +125,7 @@ class SessionServiceImplTest {
     void getSession() {
         Session expectedSession = new Session(
             expectedUserID,
-            sessionPostfix,
+                expectedSessionPostfix,
             expectedCreatedAt,
             expectedRoles,
             "a-token",
@@ -130,59 +133,28 @@ class SessionServiceImplTest {
             expectedTokenID
         );
 
-        when(sessionPostfixGenerator.getPostfixLength()).thenReturn(sessionPostfixLength);
-        when(sessionRepository.findByID(any(), any())).thenReturn(Optional.of(expectedSession));
+        SessionID expectedSessionIDModel = new SessionID(expectedUserID, expectedSessionPostfix);
 
-        assertDoesNotThrow(() -> {
-            Session actualSession = sut.getSession(expectedSessionID);
+        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
+        when(sessionRepository.findByID(any())).thenReturn(Optional.of(expectedSession));
 
-            assertEquals(
-                sessionPostfix,
-                actualSession.getSessionPostfix()
-            );
+        Session actualSession = sut.getSession(expectedSessionID);
 
-            assertEquals(
-                expectedUserID,
-                actualSession.getUserID()
-            );
+        assertEquals(expectedSession, actualSession);
 
-            assertEquals(
-                expectedCreatedAt,
-                actualSession.getCreatedAt()
-            );
-
-            assertTrue(compareStringArraysContent(expectedRoles, actualSession.getRoles()));
-
-            assertEquals(
-                expectedSession.getAccessToken(),
-                actualSession.getAccessToken()
-            );
-
-            assertEquals(
-                expectedSession.getRefreshToken(),
-                actualSession.getRefreshToken()
-            );
-
-            assertEquals(
-                expectedTokenID,
-                actualSession.getTokenID()
-            );
-        });
-
-        verify(sessionPostfixGenerator, atLeastOnce()).getPostfixLength();
-        verify(sessionRepository).findByID(eq(expectedUserID), eq(sessionPostfix));
+        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
+        verify(sessionRepository).findByID(eq(expectedSessionIDModel));
     }
 
     @Test
     void getSession_SessionNotFound() {
-        when(sessionPostfixGenerator.getPostfixLength()).thenReturn(sessionPostfixLength);
-        when(sessionRepository.findByID(any(), any())).thenReturn(Optional.empty());
+        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
+        when(sessionRepository.findByID(any())).thenReturn(Optional.empty());
 
         assertThrows(SessionNotFoundException.class, () -> sut.getSession(expectedSessionID));
 
-        verify(sessionPostfixGenerator, atLeastOnce()).getPostfixLength();
-
-        verify(sessionRepository).findByID(eq(expectedUserID), eq(sessionPostfix));
+        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
+        verify(sessionRepository).findByID(any());
     }
 
     @Test
@@ -232,7 +204,7 @@ class SessionServiceImplTest {
 
         when(sessionRepository.findAllByUserID(any())).thenReturn(expectedUserSessions);
 
-        assertThrows(UserSessionsNotFound.class, () -> sut.getSessionsByUserID(expectedUserID));
+        assertThrows(UserSessionsNotFoundException.class, () -> sut.getSessionsByUserID(expectedUserID));
 
         verify(sessionRepository).findAllByUserID(eq(expectedUserID));
     }
@@ -257,27 +229,30 @@ class SessionServiceImplTest {
 
         Session session = new Session(
             expectedUserID,
-            sessionPostfix, expectedCreatedAt,
+                expectedSessionPostfix,
+                expectedCreatedAt,
             expectedRoles,
             accessToken,
             refreshToken,
             oldTokenID
         );
 
+        SessionID sessionIDModel = new SessionID(expectedUserID, expectedSessionPostfix);
+
         when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
         when(jwtUtil.generateAccessTokenBuilder()).thenReturn(generateTestAccessTokenBuilder());
         when(jwtUtil.generateRefreshTokenBuilder()).thenReturn(generateTestRefreshTokenBuilder());
-        when(sessionPostfixGenerator.getPostfixLength()).thenReturn(sessionPostfixLength);
+        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
         when(tokenIDGenerator.generate()).thenReturn(expectedTokenID);
-        when(sessionRepository.findByID(any(), any())).thenReturn(Optional.of(session));
+        when(sessionRepository.findByID(any())).thenReturn(Optional.of(session));
         when(sessionRepository.insert(any(Session.class))).then(returnsFirstArg());
-        when(sessionRepository.deleteByID(any(),any())).thenReturn(true);
+        when(sessionRepository.deleteByKey(any(),any())).thenReturn(true);
 
         assertDoesNotThrow(() -> {
             Session newSession = sut.refreshSession(refreshToken);
 
             assertEquals(expectedUserID, newSession.getUserID());
-            assertEquals(sessionPostfix, newSession.getSessionPostfix());
+            assertEquals(expectedSessionPostfix, newSession.getSessionKey());
             assertEquals(expectedTokenID, newSession.getTokenID());
             assertTrue(expectedCreatedAt.isBefore(newSession.getCreatedAt()));
             assertTrue(compareStringArraysContent(expectedRoles, newSession.getRoles()));
@@ -308,10 +283,10 @@ class SessionServiceImplTest {
         verify(jwtUtil).getRefreshTokenParser();
         verify(jwtUtil).generateAccessTokenBuilder();
         verify(jwtUtil).generateRefreshTokenBuilder();
-        verify(sessionPostfixGenerator, atLeastOnce()).getPostfixLength();
+        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
         verify(tokenIDGenerator).generate();
-        verify(sessionRepository).deleteByID(eq(expectedUserID), eq(sessionPostfix));
-        verify(sessionRepository).findByID(eq(expectedUserID), eq(sessionPostfix));
+        verify(sessionRepository).deleteByKey(eq(expectedUserID), eq(expectedSessionPostfix));
+        verify(sessionRepository).findByID(eq(sessionIDModel));
     }
 
     @Test
@@ -323,12 +298,12 @@ class SessionServiceImplTest {
         assertThrows(InvalidTokenException.class, () -> sut.refreshSession(invalidToken));
 
         verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionPostfixGenerator, never()).getPostfixLength();
-        verify(sessionRepository, never()).findByID(any(), any());
+        verify(sessionKeyGenerator, never()).getKeyLength();
+        verify(sessionRepository, never()).findByID(any());
         verify(jwtUtil, never()).generateAccessTokenBuilder();
         verify(jwtUtil, never()).generateRefreshTokenBuilder();
         verify(tokenIDGenerator, never()).generate();
-        verify(sessionRepository, never()).deleteByID(any(), any());
+        verify(sessionRepository, never()).deleteByKey(any(), any());
     }
 
     @Test
@@ -340,18 +315,18 @@ class SessionServiceImplTest {
             .compact();
 
         when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionPostfixGenerator.getPostfixLength()).thenReturn(sessionPostfixLength);
-        when(sessionRepository.findByID(any(), any())).thenReturn(Optional.empty());
+        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
+        when(sessionRepository.findByID(any())).thenReturn(Optional.empty());
 
         assertThrows(InvalidTokenException.class, () -> sut.refreshSession(invalidToken));
 
         verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionPostfixGenerator, atLeastOnce()).getPostfixLength();
-        verify(sessionRepository).findByID(eq(expectedUserID), eq("1233"));
+        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
+        verify(sessionRepository).findByID(any());
         verify(jwtUtil, never()).generateAccessTokenBuilder();
         verify(jwtUtil, never()).generateRefreshTokenBuilder();
         verify(tokenIDGenerator, never()).generate();
-        verify(sessionRepository, never()).deleteByID(any(), any());
+        verify(sessionRepository, never()).deleteByKey(any(), any());
     }
 
     @Test
@@ -366,7 +341,7 @@ class SessionServiceImplTest {
 
         Session expectedSession = new Session(
             expectedUserID,
-            sessionPostfix,
+                expectedSessionPostfix,
             expectedCreatedAt,
             expectedRoles,
             "a-token",
@@ -375,18 +350,18 @@ class SessionServiceImplTest {
         );
 
         when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionPostfixGenerator.getPostfixLength()).thenReturn(sessionPostfixLength);
-        when(sessionRepository.findByID(any(), any())).thenReturn(Optional.of(expectedSession));
+        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
+        when(sessionRepository.findByID(any())).thenReturn(Optional.of(expectedSession));
 
         assertThrows(InvalidTokenException.class, () -> sut.refreshSession(invalidToken));
 
         verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionPostfixGenerator, atLeastOnce()).getPostfixLength();
-        verify(sessionRepository).findByID(eq(expectedUserID), eq(sessionPostfix));
+        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
+        verify(sessionRepository).findByID(any());
         verify(jwtUtil, never()).generateAccessTokenBuilder();
         verify(jwtUtil, never()).generateRefreshTokenBuilder();
         verify(tokenIDGenerator, never()).generate();
-        verify(sessionRepository, never()).deleteByID(any(), any());
+        verify(sessionRepository, never()).deleteByKey(any(), any());
     }
 
     @Test
@@ -398,7 +373,7 @@ class SessionServiceImplTest {
 
         Session session = new Session(
             expectedUserID,
-            sessionPostfix,
+                expectedSessionPostfix,
             expectedCreatedAt,
             expectedRoles,
             "a-token",
@@ -406,17 +381,17 @@ class SessionServiceImplTest {
             expectedTokenID
         );
 
-        when(sessionPostfixGenerator.getPostfixLength()).thenReturn(sessionPostfixLength);
+        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
         when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionRepository.findByID(any(), any())).thenReturn(Optional.of(session));
-        when(sessionRepository.deleteByID(any(), any())).thenReturn(true);
+        when(sessionRepository.findByID(any())).thenReturn(Optional.of(session));
+        when(sessionRepository.deleteByKey(any(), any())).thenReturn(true);
 
         assertDoesNotThrow(() -> sut.deleteSession(token));
 
         verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionPostfixGenerator, atLeastOnce()).getPostfixLength();
-        verify(sessionRepository).findByID(eq(expectedUserID), eq(sessionPostfix));
-        verify(sessionRepository).deleteByID(eq(expectedUserID), eq(sessionPostfix));
+        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
+        verify(sessionRepository).findByID(any());
+        verify(sessionRepository).deleteByKey(eq(expectedUserID), eq(expectedSessionPostfix));
     }
 
     @Test
@@ -428,7 +403,7 @@ class SessionServiceImplTest {
 
         Session session = new Session(
             expectedUserID,
-            sessionPostfix,
+                expectedSessionPostfix,
             expectedCreatedAt,
             expectedRoles,
             "a-token",
@@ -436,17 +411,17 @@ class SessionServiceImplTest {
             expectedTokenID
         );
 
-        when(sessionPostfixGenerator.getPostfixLength()).thenReturn(sessionPostfixLength);
+        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
         when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionRepository.findByID(any(), any())).thenReturn(Optional.of(session));
-        when(sessionRepository.deleteByID(any(), any())).thenReturn(false);
+        when(sessionRepository.findByID(any())).thenReturn(Optional.of(session));
+        when(sessionRepository.deleteByKey(any(), any())).thenReturn(false);
 
         assertThrows(SessionRemovingException.class,() -> sut.deleteSession(token));
 
         verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionPostfixGenerator, atLeastOnce()).getPostfixLength();
-        verify(sessionRepository).findByID(eq(expectedUserID), eq(sessionPostfix));
-        verify(sessionRepository).deleteByID(eq(expectedUserID), eq(sessionPostfix));
+        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
+        verify(sessionRepository).findByID(any());
+        verify(sessionRepository).deleteByKey(eq(expectedUserID), eq(expectedSessionPostfix));
     }
 
     @Test
@@ -455,7 +430,7 @@ class SessionServiceImplTest {
 
         Session session = new Session(
             expectedUserID,
-            sessionPostfix,
+                expectedSessionPostfix,
             expectedCreatedAt,
             expectedRoles,
             "a-token",
@@ -463,16 +438,16 @@ class SessionServiceImplTest {
             expectedTokenID
         );
 
-        when(sessionPostfixGenerator.getPostfixLength()).thenReturn(sessionPostfixLength);
+        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
         when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionRepository.findByID(any(),any())).thenReturn(Optional.of(session));
+        when(sessionRepository.findByID(any())).thenReturn(Optional.of(session));
 
         assertThrows(InvalidTokenException.class, () -> sut.deleteSession(invalidRefreshToken));
 
         verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionPostfixGenerator, never()).getPostfixLength();
-        verify(sessionRepository, never()).findByID(any(), any());
-        verify(sessionRepository, never()).deleteByID(any(), any());
+        verify(sessionKeyGenerator, never()).getKeyLength();
+        verify(sessionRepository, never()).findByID(any());
+        verify(sessionRepository, never()).deleteByKey(any(), any());
     }
 
     @Test
@@ -484,7 +459,7 @@ class SessionServiceImplTest {
 
         Session session = new Session(
             expectedUserID,
-            sessionPostfix,
+                expectedSessionPostfix,
             expectedCreatedAt,
             expectedRoles,
             "a-token",
@@ -495,17 +470,17 @@ class SessionServiceImplTest {
             expectedTokenID
         );
 
-        when(sessionPostfixGenerator.getPostfixLength()).thenReturn(sessionPostfixLength);
+        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
         when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionRepository.findByID(any(), any())).thenReturn(Optional.of(session));
+        when(sessionRepository.findByID(any())).thenReturn(Optional.of(session));
 
         assertThrows(InvalidTokenException.class, () -> sut.deleteSession(invalidRefreshToken));
 
         verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionPostfixGenerator, atLeastOnce()).getPostfixLength();
+        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
 
-        verify(sessionRepository).findByID(any(), any());
-        verify(sessionRepository, never()).deleteByID(any(), any());
+        verify(sessionRepository).findByID(any());
+        verify(sessionRepository, never()).deleteByKey(any(), any());
     }
 
     @Test
@@ -517,7 +492,7 @@ class SessionServiceImplTest {
 
         Session session = new Session(
             expectedUserID,
-            sessionPostfix,
+                expectedSessionPostfix,
             expectedCreatedAt,
             expectedRoles,
             "a-token",
@@ -528,16 +503,16 @@ class SessionServiceImplTest {
             expectedTokenID
         );
 
-        when(sessionPostfixGenerator.getPostfixLength()).thenReturn(sessionPostfixLength);
+        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
         when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionRepository.findByID(any(), any())).thenReturn(Optional.empty());
+        when(sessionRepository.findByID(any())).thenReturn(Optional.empty());
 
         assertThrows(InvalidTokenException.class, () -> sut.deleteSession(invalidRefreshToken));
 
         verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionPostfixGenerator, atLeastOnce()).getPostfixLength();
-        verify(sessionRepository).findByID(eq("invalidSess"), eq("onID"));
-        verify(sessionRepository, never()).deleteByID(any(), any());
+        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
+        verify(sessionRepository).findByID(any());
+        verify(sessionRepository, never()).deleteByKey(any(), any());
     }
 
     @Test
@@ -555,7 +530,7 @@ class SessionServiceImplTest {
     void deleteSessionsByUserID_UserSessionsNotFound() {
         when(sessionRepository.existsByUserID(any())).thenReturn(false);
 
-        assertThrows(UserSessionsNotFound.class, () -> sut.deleteSessionsByUserID(expectedUserID));
+        assertThrows(UserSessionsNotFoundException.class, () -> sut.deleteSessionsByUserID(expectedUserID));
 
         verify(sessionRepository).existsByUserID(eq(expectedUserID));
         verify(sessionRepository, never()).deleteAllByUserID(any());
@@ -575,7 +550,7 @@ class SessionServiceImplTest {
     private static boolean compare(Session session1, Session session2) {
         if (
             session1.getUserID().equals(session2.getUserID()) &&
-            session1.getSessionPostfix().equals(session2.getSessionPostfix()) &&
+            session1.getSessionKey().equals(session2.getSessionKey()) &&
             session1.getCreatedAt().equals(session2.getCreatedAt()) &&
             session1.getRoles().length == session2.getRoles().length &&
             session1.getAccessToken().equals(session2.getAccessToken()) &&

@@ -1,6 +1,5 @@
 package com.rednet.sessionservice.entity;
 
-
 import org.springframework.data.cassandra.core.mapping.CassandraType;
 import org.springframework.data.cassandra.core.mapping.Column;
 import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
@@ -8,6 +7,9 @@ import org.springframework.data.cassandra.core.mapping.Table;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 
 import static org.springframework.data.cassandra.core.cql.Ordering.DESCENDING;
 import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.CLUSTERED;
@@ -21,8 +23,8 @@ public class Session implements Serializable {
     @PrimaryKeyColumn(name = "user_id", type = PARTITIONED)
     private String userID;
 
-    @PrimaryKeyColumn(name = "session_postfix", type = CLUSTERED, ordinal = 0)
-    private String sessionPostfix;
+    @PrimaryKeyColumn(name = "session_key", type = CLUSTERED, ordinal = 0)
+    private String sessionKey;
 
     @PrimaryKeyColumn(name = "created_at", type = CLUSTERED, ordering = DESCENDING, ordinal = 1)
     @CassandraType(type = TIMESTAMP)
@@ -41,13 +43,13 @@ public class Session implements Serializable {
     @Column("token_id")
     private String tokenID;
 
-    public Session() {
+    protected Session() {
 
     }
 
     public Session(
         String userID,
-        String sessionPostfix,
+        String sessionKey,
         Instant createdAt,
         String[] roles,
         String accessToken,
@@ -55,7 +57,7 @@ public class Session implements Serializable {
         String tokenID
     ) {
         this.userID = userID;
-        this.sessionPostfix = sessionPostfix;
+        this.sessionKey = sessionKey;
         this.createdAt = createdAt;
         this.roles = roles;
         this.accessToken = accessToken;
@@ -72,12 +74,12 @@ public class Session implements Serializable {
         this.userID = userID;
     }
 
-    public String getSessionPostfix() {
-        return sessionPostfix;
+    public String getSessionKey() {
+        return sessionKey;
     }
 
-    public void setSessionPostfix(String sessionPostfix) {
-        this.sessionPostfix = sessionPostfix;
+    public void setSessionKey(String sessionKey) {
+        this.sessionKey = sessionKey;
     }
 
     public String[] getRoles() {
@@ -118,5 +120,32 @@ public class Session implements Serializable {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    @Override
+    public int hashCode() {
+        return  userID.hashCode() *
+                sessionKey.hashCode() *
+                createdAt.hashCode() *
+                Arrays.hashCode(roles) *
+                accessToken.hashCode() *
+                refreshToken.hashCode() *
+                tokenID.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (! (obj instanceof Session session)) return false;
+
+        return  userID.equals(session.userID) &&
+                sessionKey.equals(session.sessionKey) &&
+                createdAt.equals(session.createdAt) &&
+                accessToken.equals(session.accessToken) &&
+                refreshToken.equals(session.refreshToken) &&
+                tokenID.equals(session.tokenID) &&
+                roles.length == session.roles.length &&
+                new HashSet<>(List.of(roles)).containsAll(List.of(session.roles)) &&
+                new HashSet<>(List.of(session.roles)).containsAll(List.of(roles));
     }
 }

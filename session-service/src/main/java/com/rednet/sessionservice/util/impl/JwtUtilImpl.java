@@ -15,12 +15,12 @@ import static io.jsonwebtoken.io.Decoders.BASE64;
 
 @Component
 public class JwtUtilImpl implements JwtUtil {
-    private final String accessTokenIssuer;
-    private final String refreshTokenIssuer;
-    private final String accessTokenSecretKey;
-    private final long accessTokenExpirationMs;
-    private final String refreshTokenSecretKey;
-    private final long refreshTokenExpirationMs;
+    private final String    accessTokenIssuer;
+    private final String    refreshTokenIssuer;
+    private final String    accessTokenSecretKey;
+    private final long      accessTokenExpirationMs;
+    private final String    refreshTokenSecretKey;
+    private final long      refreshTokenExpirationMs;
     private final JwtParser accessTokenParser;
     private final JwtParser apiTokenParser;
     private final JwtParser refreshTokenParser;

@@ -1,6 +1,7 @@
 package com.rednet.sessionservice.repository.impl;
 
 import com.rednet.sessionservice.entity.Session;
+import com.rednet.sessionservice.model.SessionID;
 import com.rednet.sessionservice.repository.SessionRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.cassandra.core.CassandraOperations;
@@ -31,11 +32,8 @@ public class SessionRepositoryImpl implements SessionRepository {
     }
 
     @Override
-    public Optional<Session> findByID(String userID, String sessionPostfix) {
-        return Optional.ofNullable(operations.selectOne(query(List.of(
-            where("user_id").is(userID),
-            where("session_postfix").is(sessionPostfix)
-        )).limit(1), Session.class));
+    public Optional<Session> findByID(SessionID sessionID) {
+        return findByID(sessionID.getUserID(), sessionID.getSessionKey());
     }
 
     @Override
@@ -49,20 +47,27 @@ public class SessionRepositoryImpl implements SessionRepository {
     }
 
     @Override
-    public boolean deleteByID(String userID, String sessionPostfix) {
+    public boolean deleteByKey(String userID, String sessionKey) {
         return operations.delete(query(List.of(
             where("user_id").is(userID),
-            where("session_postfix").is(sessionPostfix)
+            where("session_key").is(sessionKey)
         )), Session.class);
     }
 
     @Override
     public boolean deleteAllByUserID(String userID) {
-        return operations.delete(query(where("user_id").is(userID)),Session.class);
+        return operations.delete(query(where("user_id").is(userID)), Session.class);
     }
 
     @Override
     public boolean existsByUserID(String userID) {
         return operations.exists(query(where("user_id").is(userID)), Session.class);
+    }
+
+    private Optional<Session> findByID(String userID, String sessionID) {
+        return Optional.ofNullable(operations.selectOne(query(List.of(
+                where("user_id").is(userID),
+                where("session_key").is(sessionID)
+        )).limit(1), Session.class));
     }
 }

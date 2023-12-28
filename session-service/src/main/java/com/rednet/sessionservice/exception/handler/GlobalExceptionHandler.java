@@ -3,7 +3,7 @@ package com.rednet.sessionservice.exception.handler;
 import com.rednet.sessionservice.exception.impl.InvalidTokenException;
 import com.rednet.sessionservice.exception.impl.SessionNotFoundException;
 import com.rednet.sessionservice.exception.impl.SessionRemovingException;
-import com.rednet.sessionservice.exception.impl.UserSessionsNotFound;
+import com.rednet.sessionservice.exception.impl.UserSessionsNotFoundException;
 import com.rednet.sessionservice.exception.impl.UserSessionsRemovingException;
 import com.rednet.sessionservice.exception.ErrorResponseMessage;
 import jakarta.servlet.http.HttpServletRequest;
@@ -172,7 +172,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return generateErrorResponse(BAD_REQUEST ,request.getServletPath(), ex.getMessage());
     }
 
-    @ExceptionHandler(value = {SessionNotFoundException.class, UserSessionsNotFound.class})
+    @ExceptionHandler(value = {SessionNotFoundException.class, UserSessionsNotFoundException.class})
     protected ResponseEntity<Object> handleSessionsNotFound(
         RuntimeException ex,
         HttpServletRequest request

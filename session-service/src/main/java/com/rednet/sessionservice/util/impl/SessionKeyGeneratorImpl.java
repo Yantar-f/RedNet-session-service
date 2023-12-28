@@ -1,12 +1,12 @@
 package com.rednet.sessionservice.util.impl;
 
-import com.rednet.sessionservice.util.SessionPostfixGenerator;
+import com.rednet.sessionservice.util.SessionKeyGenerator;
 import org.springframework.stereotype.Component;
 
 import java.util.Random;
 
 @Component
-public class SessionPostfixGeneratorImpl implements SessionPostfixGenerator {
+public class SessionKeyGeneratorImpl implements SessionKeyGenerator {
     private final int rangeMin = 100000;
     private final int rangeMax = 1000000;
 
@@ -17,7 +17,7 @@ public class SessionPostfixGeneratorImpl implements SessionPostfixGenerator {
     }
 
     @Override
-    public int getPostfixLength() {
+    public int getKeyLength() {
         return 6;
     }
 }
