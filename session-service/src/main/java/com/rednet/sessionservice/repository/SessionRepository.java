@@ -10,7 +10,7 @@ public interface SessionRepository {
     Optional<Session> findByID          (SessionID sessionID);
     List<Session>     findAllByUserID   (String userID);
     Session insert              (Session session);
-    boolean deleteByKey         (String userID, String sessionID);
+    boolean deleteByID          (SessionID sessionID);
     boolean deleteAllByUserID   (String userID);
     boolean existsByUserID      (String userID);
 }

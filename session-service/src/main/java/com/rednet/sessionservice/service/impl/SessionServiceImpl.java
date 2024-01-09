@@ -82,13 +82,13 @@ public class SessionServiceImpl implements SessionService {
         try {
             Claims claims = jwtUtil.getRefreshTokenParser().parseClaimsJws(refreshToken).getBody();
             String sessionID = claims.get("sid", String.class);
-            SessionID key = parseSessionID(sessionID).orElseThrow(InvalidTokenException::new);
+            SessionID key = parseSessionID(sessionID).orElseThrow(() -> new InvalidTokenException(refreshToken));
 
             Session session = sessionRepository
                 .findByID(key)
-                .orElseThrow(InvalidTokenException::new);
+                .orElseThrow(() -> new InvalidTokenException(refreshToken));
 
-            if ( ! claims.getId().equals(session.getTokenID())) throw new InvalidTokenException();
+            if ( ! claims.getId().equals(session.getTokenID())) throw new InvalidTokenException(refreshToken);
 
             String tokenID = tokenIDGenerator.generate();
 
@@ -109,7 +109,7 @@ public class SessionServiceImpl implements SessionService {
             session.setTokenID(tokenID);
             session.setCreatedAt(Instant.now());
 
-            sessionRepository.deleteByKey(session.getUserID(), session.getSessionKey());
+            sessionRepository.deleteByID(key);
 
             return sessionRepository.insert(session);
         } catch (
@@ -119,7 +119,7 @@ public class SessionServiceImpl implements SessionService {
             UnsupportedJwtException |
             IllegalArgumentException e
         ) {
-            throw new InvalidTokenException();
+            throw new InvalidTokenException(refreshToken);
         }
     }
 
@@ -128,15 +128,15 @@ public class SessionServiceImpl implements SessionService {
         try {
             Claims claims = jwtUtil.getRefreshTokenParser().parseClaimsJws(refreshToken).getBody();
             String sessionID = claims.get("sid", String.class);
-            SessionID key = parseSessionID(sessionID).orElseThrow(InvalidTokenException::new);
+            SessionID key = parseSessionID(sessionID).orElseThrow(() -> new InvalidTokenException(refreshToken));
 
             Session session = sessionRepository
                 .findByID(key)
-                .orElseThrow(InvalidTokenException::new);
+                .orElseThrow(() -> new InvalidTokenException(refreshToken));
 
-            if ( ! claims.getId().equals(session.getTokenID())) throw new InvalidTokenException();
+            if ( ! claims.getId().equals(session.getTokenID())) throw new InvalidTokenException(refreshToken);
 
-            if ( ! sessionRepository.deleteByKey(key.getUserID(), key.getSessionKey())) {
+            if ( ! sessionRepository.deleteByID(key)) {
                 throw new SessionRemovingException(sessionID);
             }
         } catch (
@@ -146,7 +146,7 @@ public class SessionServiceImpl implements SessionService {
             UnsupportedJwtException |
             IllegalArgumentException e
         ) {
-            throw new InvalidTokenException();
+            throw new InvalidTokenException(refreshToken);
         }
     }
 

@@ -47,10 +47,10 @@ public class SessionRepositoryImpl implements SessionRepository {
     }
 
     @Override
-    public boolean deleteByKey(String userID, String sessionKey) {
+    public boolean deleteByID(SessionID sessionID) {
         return operations.delete(query(List.of(
-            where("user_id").is(userID),
-            where("session_key").is(sessionKey)
+            where("user_id").is(sessionID.getUserID()),
+            where("session_key").is(sessionID.getSessionKey())
         )), Session.class);
     }
 

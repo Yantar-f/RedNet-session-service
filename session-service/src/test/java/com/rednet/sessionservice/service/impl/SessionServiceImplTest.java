@@ -246,7 +246,7 @@ class SessionServiceImplTest {
         when(tokenIDGenerator.generate()).thenReturn(expectedTokenID);
         when(sessionRepository.findByID(any())).thenReturn(Optional.of(session));
         when(sessionRepository.insert(any(Session.class))).then(returnsFirstArg());
-        when(sessionRepository.deleteByKey(any(),any())).thenReturn(true);
+        when(sessionRepository.deleteByID(any())).thenReturn(true);
 
         assertDoesNotThrow(() -> {
             Session newSession = sut.refreshSession(refreshToken);
@@ -285,7 +285,7 @@ class SessionServiceImplTest {
         verify(jwtUtil).generateRefreshTokenBuilder();
         verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
         verify(tokenIDGenerator).generate();
-        verify(sessionRepository).deleteByKey(eq(expectedUserID), eq(expectedSessionPostfix));
+        verify(sessionRepository).deleteByID(eq(sessionIDModel));
         verify(sessionRepository).findByID(eq(sessionIDModel));
     }
 
@@ -303,7 +303,7 @@ class SessionServiceImplTest {
         verify(jwtUtil, never()).generateAccessTokenBuilder();
         verify(jwtUtil, never()).generateRefreshTokenBuilder();
         verify(tokenIDGenerator, never()).generate();
-        verify(sessionRepository, never()).deleteByKey(any(), any());
+        verify(sessionRepository, never()).deleteByID(any());
     }
 
     @Test
@@ -326,7 +326,7 @@ class SessionServiceImplTest {
         verify(jwtUtil, never()).generateAccessTokenBuilder();
         verify(jwtUtil, never()).generateRefreshTokenBuilder();
         verify(tokenIDGenerator, never()).generate();
-        verify(sessionRepository, never()).deleteByKey(any(), any());
+        verify(sessionRepository, never()).deleteByID(any());
     }
 
     @Test
@@ -361,7 +361,7 @@ class SessionServiceImplTest {
         verify(jwtUtil, never()).generateAccessTokenBuilder();
         verify(jwtUtil, never()).generateRefreshTokenBuilder();
         verify(tokenIDGenerator, never()).generate();
-        verify(sessionRepository, never()).deleteByKey(any(), any());
+        verify(sessionRepository, never()).deleteByID(any());
     }
 
     @Test
@@ -381,17 +381,19 @@ class SessionServiceImplTest {
             expectedTokenID
         );
 
+        SessionID sessionIDModel = new SessionID(expectedUserID, expectedSessionID);
+
         when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
         when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
         when(sessionRepository.findByID(any())).thenReturn(Optional.of(session));
-        when(sessionRepository.deleteByKey(any(), any())).thenReturn(true);
+        when(sessionRepository.deleteByID(any())).thenReturn(true);
 
         assertDoesNotThrow(() -> sut.deleteSession(token));
 
         verify(jwtUtil).getRefreshTokenParser();
         verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
         verify(sessionRepository).findByID(any());
-        verify(sessionRepository).deleteByKey(eq(expectedUserID), eq(expectedSessionPostfix));
+        verify(sessionRepository).deleteByID(eq(sessionIDModel));
     }
 
     @Test
@@ -411,17 +413,19 @@ class SessionServiceImplTest {
             expectedTokenID
         );
 
+        SessionID sessionIDModel = new SessionID(expectedUserID, expectedSessionID);
+
         when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
         when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
         when(sessionRepository.findByID(any())).thenReturn(Optional.of(session));
-        when(sessionRepository.deleteByKey(any(), any())).thenReturn(false);
+        when(sessionRepository.deleteByID(any())).thenReturn(false);
 
         assertThrows(SessionRemovingException.class,() -> sut.deleteSession(token));
 
         verify(jwtUtil).getRefreshTokenParser();
         verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
         verify(sessionRepository).findByID(any());
-        verify(sessionRepository).deleteByKey(eq(expectedUserID), eq(expectedSessionPostfix));
+        verify(sessionRepository).deleteByID(eq(sessionIDModel));
     }
 
     @Test
@@ -447,7 +451,7 @@ class SessionServiceImplTest {
         verify(jwtUtil).getRefreshTokenParser();
         verify(sessionKeyGenerator, never()).getKeyLength();
         verify(sessionRepository, never()).findByID(any());
-        verify(sessionRepository, never()).deleteByKey(any(), any());
+        verify(sessionRepository, never()).deleteByID(any());
     }
 
     @Test
@@ -480,7 +484,7 @@ class SessionServiceImplTest {
         verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
 
         verify(sessionRepository).findByID(any());
-        verify(sessionRepository, never()).deleteByKey(any(), any());
+        verify(sessionRepository, never()).deleteByID(any());
     }
 
     @Test
@@ -512,7 +516,7 @@ class SessionServiceImplTest {
         verify(jwtUtil).getRefreshTokenParser();
         verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
         verify(sessionRepository).findByID(any());
-        verify(sessionRepository, never()).deleteByKey(any(), any());
+        verify(sessionRepository, never()).deleteByID(any());
     }
 
     @Test

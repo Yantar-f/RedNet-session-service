@@ -26,24 +26,24 @@ public class JwtUtilImpl implements JwtUtil {
     private final JwtParser refreshTokenParser;
 
     public JwtUtilImpl(
-        @Value("${rednet.app.security.access-token.issuer}") String accessTokenIssuer,
-        @Value("${rednet.app.security.access-token.secret-key}") String accessTokenSecretKey,
-        @Value("${rednet.app.security.access-token.expiration-ms}") long accessTokenExpirationMs,
-        @Value("${rednet.app.security.access-token.allowed-clock-skew-s}") long accessTokenAllowedClockSkewS,
-        @Value("${rednet.app.security.refresh-token.issuer}") String refreshTokenIssuer,
-        @Value("${rednet.app.security.refresh-token.secret-key}") String refreshTokenSecretKey,
-        @Value("${rednet.app.security.refresh-token.expiration-ms}") long refreshTokenExpirationMs,
-        @Value("${rednet.app.security.refresh-token.allowed-clock-skew-s}") long refreshTokenAllowedClockSkewS,
-        @Value("${rednet.app.security.api-token.secret-key}") String apiTokenSecretKey,
-        @Value("${rednet.app.security.api-token.issuer}") String apiTokenIssuer,
-        @Value("${rednet.app.security.api-token.allowed-clock-skew-s}") long apiTokenAllowedClockSkewS
+        @Value("${rednet.app.security.access-token.issuer}") String                 accessTokenIssuer,
+        @Value("${rednet.app.security.access-token.secret-key}") String             accessTokenSecretKey,
+        @Value("${rednet.app.security.access-token.expiration-ms}") long            accessTokenExpirationMs,
+        @Value("${rednet.app.security.access-token.allowed-clock-skew-s}") long     accessTokenAllowedClockSkewS,
+        @Value("${rednet.app.security.refresh-token.issuer}") String                refreshTokenIssuer,
+        @Value("${rednet.app.security.refresh-token.secret-key}") String            refreshTokenSecretKey,
+        @Value("${rednet.app.security.refresh-token.expiration-ms}") long           refreshTokenExpirationMs,
+        @Value("${rednet.app.security.refresh-token.allowed-clock-skew-s}") long    refreshTokenAllowedClockSkewS,
+        @Value("${rednet.app.security.api-token.secret-key}") String                apiTokenSecretKey,
+        @Value("${rednet.app.security.api-token.issuer}") String                    apiTokenIssuer,
+        @Value("${rednet.app.security.api-token.allowed-clock-skew-s}") long        apiTokenAllowedClockSkewS
     ) {
-        this.accessTokenIssuer = accessTokenIssuer;
-        this.refreshTokenIssuer = refreshTokenIssuer;
-        this.accessTokenSecretKey = accessTokenSecretKey;
-        this.accessTokenExpirationMs = accessTokenExpirationMs;
-        this.refreshTokenSecretKey = refreshTokenSecretKey;
-        this.refreshTokenExpirationMs = refreshTokenExpirationMs;
+        this.accessTokenIssuer          = accessTokenIssuer;
+        this.refreshTokenIssuer         = refreshTokenIssuer;
+        this.accessTokenSecretKey       = accessTokenSecretKey;
+        this.accessTokenExpirationMs    = accessTokenExpirationMs;
+        this.refreshTokenSecretKey      = refreshTokenSecretKey;
+        this.refreshTokenExpirationMs   = refreshTokenExpirationMs;
 
         this.accessTokenParser = Jwts.parserBuilder()
             .setSigningKey(Keys.hmacShaKeyFor(BASE64.decode(accessTokenSecretKey)))
