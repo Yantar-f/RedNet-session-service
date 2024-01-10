@@ -86,8 +86,8 @@ public class SessionServiceImpl2 implements SessionService {
 
             session.setAccessToken(tokenService.generateAccessToken(claims));
             session.setRefreshToken(tokenService.generateRefreshToken(claims));
-            session.setCreatedAt(Instant.now());
             session.setTokenID(claims.getTokenID());
+            session.setCreatedAt(Instant.now());
 
             return sessionRepository.insert(session);
         } catch (InvalidSessionIDException e) {

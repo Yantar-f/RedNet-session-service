@@ -7,8 +7,8 @@ import java.util.Random;
 
 @Component
 public class SessionKeyGeneratorImpl implements SessionKeyGenerator {
-    private final int rangeMin = 100000;
-    private final int rangeMax = 1000000;
+    private final int rangeMin = 10000000;
+    private final int rangeMax = 100000000;
 
     private final Random random = new Random();
     @Override
@@ -18,6 +18,6 @@ public class SessionKeyGeneratorImpl implements SessionKeyGenerator {
 
     @Override
     public int getKeyLength() {
-        return 6;
+        return 8;
     }
 }
