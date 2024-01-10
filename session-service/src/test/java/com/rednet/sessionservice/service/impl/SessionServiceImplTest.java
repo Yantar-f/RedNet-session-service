@@ -1,593 +1,556 @@
 package com.rednet.sessionservice.service.impl;
 
 import com.rednet.sessionservice.entity.Session;
-import com.rednet.sessionservice.exception.impl.InvalidTokenException;
-import com.rednet.sessionservice.exception.impl.SessionNotFoundException;
-import com.rednet.sessionservice.exception.impl.SessionRemovingException;
-import com.rednet.sessionservice.exception.impl.UserSessionsNotFoundException;
-import com.rednet.sessionservice.exception.impl.UserSessionsRemovingException;
+import com.rednet.sessionservice.exception.impl.*;
 import com.rednet.sessionservice.model.SessionID;
+import com.rednet.sessionservice.model.TokenClaims;
 import com.rednet.sessionservice.repository.SessionRepository;
-import com.rednet.sessionservice.util.JwtUtil;
-import com.rednet.sessionservice.util.SessionKeyGenerator;
+import com.rednet.sessionservice.service.SessionService;
+import com.rednet.sessionservice.service.TokenService;
+import com.rednet.sessionservice.util.SessionIDShaper;
 import com.rednet.sessionservice.util.TokenIDGenerator;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.JwtParser;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
+import org.apache.commons.lang.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
-import static io.jsonwebtoken.io.Decoders.BASE64;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-
 class SessionServiceImplTest {
-    int         sessionPostfixLength = 4;
-    String      expectedUserID = "user";
-    String      expectedSessionPostfix = "1234";
-    String      expectedTokenID = "4321";
-    String      expectedSessionID = expectedUserID + '.' + expectedSessionPostfix;
-    String      expectedAccessToken = "a-token";
-    String      expectedRefreshToken = "r-token";
-    String      accessTokenSecretKey = "suF25ZudSgyzQSS9QgpaSyUt5XZZGtTayc22RlLe5IX1erTOz64mN5BarqeiPV2s";
-    String      refreshTokenSecretKey = "a1yTJjPn3+N8p7y3bANWFg+mOpQH6WWrSfKq2NM4f9YFNsKK8U4VRx6Godo3OeEf";
-    String[]    expectedRoles = new String[]{"role"};
-    Instant     expectedCreatedAt = Instant.now();
+    private final SessionRepository     sessionRepository   = mock(SessionRepository.class);
+    private final TokenIDGenerator      tokenIDGenerator    = mock(TokenIDGenerator.class);
+    private final TokenService          tokenService        = mock(TokenService.class);
+    private final SessionIDShaper       sessionIDShaper     = mock(SessionIDShaper.class);
 
-    JwtParser accessTokenParser = Jwts.parserBuilder()
-        .setSigningKey(Keys.hmacShaKeyFor(BASE64.decode(accessTokenSecretKey)))
-        .build();
-
-    JwtParser refreshTokenParser = Jwts.parserBuilder()
-        .setSigningKey(Keys.hmacShaKeyFor(BASE64.decode(refreshTokenSecretKey)))
-        .build();
-
-    SessionRepository       sessionRepository = mock(SessionRepository.class);
-    JwtUtil                 jwtUtil = mock(JwtUtil.class);
-    SessionKeyGenerator sessionKeyGenerator = mock(SessionKeyGenerator.class);
-    TokenIDGenerator        tokenIDGenerator = mock(TokenIDGenerator.class);
-
-    SessionServiceImpl sut = new SessionServiceImpl(
-        sessionRepository,
-        jwtUtil,
-            sessionKeyGenerator,
-        tokenIDGenerator
+    private final SessionService sut = new SessionServiceImpl(
+            sessionRepository,
+            tokenIDGenerator,
+            tokenService,
+            sessionIDShaper
     );
 
     @Test
-    void createSession() {
-        when(jwtUtil.generateAccessTokenBuilder()).thenReturn(generateTestAccessTokenBuilder());
-        when(jwtUtil.generateRefreshTokenBuilder()).thenReturn(generateTestRefreshTokenBuilder());
-        when(sessionKeyGenerator.generate()).thenReturn(expectedSessionPostfix);
-        when(tokenIDGenerator.generate()).thenReturn(expectedTokenID);
-        when(sessionRepository.insert(any(Session.class))).then(returnsFirstArg());
+    void Creating_session_is_successful() {
+        String      expectedSessionIDStr    = randString();
+        String      expectedUserID          = randString();
+        String      expectedSessionKey      = randString();
+        String      expectedTokenID         = randString();
+        String      expectedAccessToken     = randString();
+        String      expectedRefreshToken    = randString();
+        Instant     expectedCreatedAtAfter  = Instant.now();
+        String[]    expectedRoles           = new String[]{randString()};
+        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+
+        Session expectedSession = new Session(
+                expectedUserID,
+                expectedSessionKey,
+                expectedCreatedAtAfter,
+                expectedRoles,
+                expectedAccessToken,
+                expectedRefreshToken,
+                expectedTokenID
+        );
+
+        when(tokenIDGenerator.generate())
+                .thenReturn(expectedTokenID);
+
+        when(sessionIDShaper.generate(any()))
+                .thenReturn(expectedSessionID);
+
+        when(sessionIDShaper.convert(any()))
+                .thenReturn(expectedSessionIDStr);
+
+        when(tokenService.generateAccessToken(any()))
+                .thenReturn(expectedAccessToken);
+
+        when(tokenService.generateRefreshToken(any()))
+                .thenReturn(expectedRefreshToken);
+
+        when(sessionRepository.insert(any()))
+                .thenReturn(expectedSession);
 
         Session actualSession = sut.createSession(expectedUserID, expectedRoles);
 
-        assertEquals(expectedUserID, actualSession.getUserID());
-        assertEquals(expectedSessionPostfix, actualSession.getSessionKey());
-        assertEquals(expectedRoles.length, actualSession.getRoles().length);
-        assertEquals(expectedTokenID, actualSession.getTokenID());
-        assertTrue(compareStringArraysContent(expectedRoles, actualSession.getRoles()));
-
-        assertDoesNotThrow(() -> {
-            Claims claims = accessTokenParser.parseClaimsJws(actualSession.getAccessToken()).getBody();
-            List<String> actualTokenRoles = claims.get("roles", ArrayList.class);
-
-            assertEquals("access", claims.get("test"));
-            assertEquals(expectedSessionID, claims.get("sid"));
-            assertEquals(expectedUserID, claims.getSubject());
-            assertEquals(expectedTokenID, claims.getId());
-            assertEquals(expectedRoles.length, actualTokenRoles.size());
-            assertTrue(compareStringArraysContent(expectedRoles, actualTokenRoles.toArray(String[]::new)));
-        });
-
-        assertDoesNotThrow(() -> {
-            Claims claims = refreshTokenParser.parseClaimsJws(actualSession.getRefreshToken()).getBody();
-            List<String> actualTokenRoles = claims.get("roles", ArrayList.class);
-
-            assertEquals("refresh", claims.get("test"));
-            assertEquals(expectedSessionID, claims.get("sid"));
-            assertEquals(expectedUserID, claims.getSubject());
-            assertEquals(expectedTokenID, claims.getId());
-            assertEquals(expectedRoles.length, actualTokenRoles.size());
-            assertTrue(compareStringArraysContent(expectedRoles, actualTokenRoles.toArray(String[]::new)));
-        });
-
-        verify(jwtUtil).generateAccessTokenBuilder();
-        verify(jwtUtil).generateRefreshTokenBuilder();
-        verify(sessionKeyGenerator).generate();
-        verify(tokenIDGenerator).generate();
-
-        verify(sessionRepository).insert(argThat(session ->
-            session.getUserID().equals(expectedUserID) &&
-            session.getSessionKey().equals(expectedSessionPostfix) &&
-            compareStringArraysContent(expectedRoles, session.getRoles())
-        ));
-    }
-
-    @Test
-    void getSession() {
-        Session expectedSession = new Session(
-            expectedUserID,
-                expectedSessionPostfix,
-            expectedCreatedAt,
-            expectedRoles,
-            "a-token",
-            "r-token",
-            expectedTokenID
-        );
-
-        SessionID expectedSessionIDModel = new SessionID(expectedUserID, expectedSessionPostfix);
-
-        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
-        when(sessionRepository.findByID(any())).thenReturn(Optional.of(expectedSession));
-
-        Session actualSession = sut.getSession(expectedSessionID);
-
         assertEquals(expectedSession, actualSession);
 
-        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
-        verify(sessionRepository).findByID(eq(expectedSessionIDModel));
+        verify(sessionRepository)
+                .insert(argThat(session -> isSessionTheSameButCreatedAfter(expectedSession, session)));
     }
 
     @Test
-    void getSession_SessionNotFound() {
-        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
-        when(sessionRepository.findByID(any())).thenReturn(Optional.empty());
-
-        assertThrows(SessionNotFoundException.class, () -> sut.getSession(expectedSessionID));
-
-        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
-        verify(sessionRepository).findByID(any());
-    }
-
-    @Test
-    void getSessionsByUserID() {
-        Session
-            session1 = new Session(
-                expectedUserID,
-                "1111",
-                Instant.now(),
-                new String[]{"role1", "role2"},
-                "a-token1",
-                "r-token1",
-                "token-id1"
-            ),
-
-            session2 = new Session(
-                expectedUserID,
-                "1112",
-                Instant.now(),
-                new String[]{"role"},
-                "a-token2",
-                "r-token2",
-                "token-id1"
-            );
-
-        List<Session> expectedUserSessions = List.of(session1, session2);
-
-        when(sessionRepository.findAllByUserID(any())).thenReturn(expectedUserSessions);
-
-        assertDoesNotThrow(() -> {
-            List<Session> actualUserSessions = sut.getSessionsByUserID(expectedUserID);
-            assertEquals(expectedUserSessions.size(), actualUserSessions.size());
-
-            expectedUserSessions.forEach(expectedSession ->
-                assertTrue(actualUserSessions.stream().anyMatch(actualSession ->
-                    compare(expectedSession, actualSession)
-                ))
-            );
-        });
-
-        verify(sessionRepository).findAllByUserID(eq(expectedUserID));
-    }
-
-    @Test
-    void getSessionsByUserID_UserSessionsNotFound() {
-        List<Session> expectedUserSessions = List.of();
-
-        when(sessionRepository.findAllByUserID(any())).thenReturn(expectedUserSessions);
-
-        assertThrows(UserSessionsNotFoundException.class, () -> sut.getSessionsByUserID(expectedUserID));
-
-        verify(sessionRepository).findAllByUserID(eq(expectedUserID));
-    }
-
-    @Test
-    void refreshSession() {
-        String oldTokenID = "1221";
-
-        String accessToken = generateTestAccessTokenBuilder()
-            .setId(oldTokenID)
-            .setSubject(expectedUserID)
-            .claim("roles", expectedRoles)
-            .claim("sid", expectedSessionID)
-            .compact();
-
-        String refreshToken = generateTestRefreshTokenBuilder()
-            .setId(oldTokenID)
-            .setSubject(expectedUserID)
-            .claim("roles", expectedRoles)
-            .claim("sid", expectedSessionID)
-            .compact();
-
-        Session session = new Session(
-            expectedUserID,
-                expectedSessionPostfix,
-                expectedCreatedAt,
-            expectedRoles,
-            accessToken,
-            refreshToken,
-            oldTokenID
-        );
-
-        SessionID sessionIDModel = new SessionID(expectedUserID, expectedSessionPostfix);
-
-        when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(jwtUtil.generateAccessTokenBuilder()).thenReturn(generateTestAccessTokenBuilder());
-        when(jwtUtil.generateRefreshTokenBuilder()).thenReturn(generateTestRefreshTokenBuilder());
-        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
-        when(tokenIDGenerator.generate()).thenReturn(expectedTokenID);
-        when(sessionRepository.findByID(any())).thenReturn(Optional.of(session));
-        when(sessionRepository.insert(any(Session.class))).then(returnsFirstArg());
-        when(sessionRepository.deleteByID(any())).thenReturn(true);
-
-        assertDoesNotThrow(() -> {
-            Session newSession = sut.refreshSession(refreshToken);
-
-            assertEquals(expectedUserID, newSession.getUserID());
-            assertEquals(expectedSessionPostfix, newSession.getSessionKey());
-            assertEquals(expectedTokenID, newSession.getTokenID());
-            assertTrue(expectedCreatedAt.isBefore(newSession.getCreatedAt()));
-            assertTrue(compareStringArraysContent(expectedRoles, newSession.getRoles()));
-
-            assertDoesNotThrow(() -> {
-                Claims claims = accessTokenParser.parseClaimsJws(newSession.getAccessToken()).getBody();
-                List<String> actualTokenRoles = claims.get("roles", ArrayList.class);
-
-                assertEquals("access", claims.get("test"));
-                assertEquals(expectedSessionID, claims.get("sid"));
-                assertEquals(expectedUserID, claims.getSubject());
-                assertEquals(expectedTokenID, claims.getId());
-                assertTrue(compareStringArraysContent(expectedRoles, actualTokenRoles.toArray(String[]::new)));
-            });
-
-            assertDoesNotThrow(() -> {
-                Claims claims = refreshTokenParser.parseClaimsJws(newSession.getRefreshToken()).getBody();
-                List<String> actualTokenRoles = claims.get("roles", ArrayList.class);
-
-                assertEquals("refresh", claims.get("test"));
-                assertEquals(expectedSessionID, claims.get("sid"));
-                assertEquals(expectedUserID, claims.getSubject());
-                assertEquals(expectedTokenID, claims.getId());
-                assertTrue(compareStringArraysContent(expectedRoles, actualTokenRoles.toArray(String[]::new)));
-            });
-        });
-
-        verify(jwtUtil).getRefreshTokenParser();
-        verify(jwtUtil).generateAccessTokenBuilder();
-        verify(jwtUtil).generateRefreshTokenBuilder();
-        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
-        verify(tokenIDGenerator).generate();
-        verify(sessionRepository).deleteByID(eq(sessionIDModel));
-        verify(sessionRepository).findByID(eq(sessionIDModel));
-    }
-
-    @Test
-    void refreshSession_InvalidToken() {
-        String invalidToken = "head.payload.signature";
-
-        when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-
-        assertThrows(InvalidTokenException.class, () -> sut.refreshSession(invalidToken));
-
-        verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionKeyGenerator, never()).getKeyLength();
-        verify(sessionRepository, never()).findByID(any());
-        verify(jwtUtil, never()).generateAccessTokenBuilder();
-        verify(jwtUtil, never()).generateRefreshTokenBuilder();
-        verify(tokenIDGenerator, never()).generate();
-        verify(sessionRepository, never()).deleteByID(any());
-    }
-
-    @Test
-    void refreshSession_InvalidToken_InvalidSessionID() {
-        String invalidToken = generateTestRefreshTokenBuilder()
-            .setSubject(expectedUserID)
-            .claim("roles", expectedRoles)
-            .claim("sid", expectedUserID + '.' + "1233")
-            .compact();
-
-        when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
-        when(sessionRepository.findByID(any())).thenReturn(Optional.empty());
-
-        assertThrows(InvalidTokenException.class, () -> sut.refreshSession(invalidToken));
-
-        verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
-        verify(sessionRepository).findByID(any());
-        verify(jwtUtil, never()).generateAccessTokenBuilder();
-        verify(jwtUtil, never()).generateRefreshTokenBuilder();
-        verify(tokenIDGenerator, never()).generate();
-        verify(sessionRepository, never()).deleteByID(any());
-    }
-
-    @Test
-    void refreshSession_InvalidToken_UsedToken() {
-        String invalidToken = Jwts.builder()
-            .signWith(Keys.hmacShaKeyFor(BASE64.decode(refreshTokenSecretKey)))
-            .setId("id2")
-            .setSubject(expectedUserID)
-            .claim("roles", expectedRoles)
-            .claim("sid", expectedSessionID)
-            .compact();
+    public void Getting_session_by_valid_id_is_successful() {
+        String      expectedSessionIDStr    = randString();
+        String      expectedUserID          = randString();
+        String      expectedSessionKey      = randString();
+        String      expectedTokenID         = randString();
+        String      expectedAccessToken     = randString();
+        String      expectedRefreshToken    = randString();
+        Instant     expectedCreatedAtAfter  = Instant.now();
+        String[]    expectedRoles           = new String[]{randString()};
+        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
 
         Session expectedSession = new Session(
-            expectedUserID,
-                expectedSessionPostfix,
-            expectedCreatedAt,
-            expectedRoles,
-            "a-token",
-            "r-token",
-            "id1"
+                expectedUserID,
+                expectedSessionKey,
+                expectedCreatedAtAfter,
+                expectedRoles,
+                expectedAccessToken,
+                expectedRefreshToken,
+                expectedTokenID
         );
 
-        when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
-        when(sessionRepository.findByID(any())).thenReturn(Optional.of(expectedSession));
+        when(sessionIDShaper.parse(any()))
+                .thenReturn(expectedSessionID);
 
-        assertThrows(InvalidTokenException.class, () -> sut.refreshSession(invalidToken));
+        when(sessionRepository.findByID(any()))
+                .thenReturn(Optional.of(expectedSession));
 
-        verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
-        verify(sessionRepository).findByID(any());
-        verify(jwtUtil, never()).generateAccessTokenBuilder();
-        verify(jwtUtil, never()).generateRefreshTokenBuilder();
-        verify(tokenIDGenerator, never()).generate();
-        verify(sessionRepository, never()).deleteByID(any());
+        Session actualSession = sut.getSession(expectedSessionIDStr);
+
+        assertEquals(expectedSession, actualSession);
     }
 
     @Test
-    void deleteSession() {
-        String token = generateTestRefreshTokenBuilder()
-            .claim("sid", expectedSessionID)
-            .setId(expectedTokenID)
-            .compact();
+    public void Getting_session_by_not_existing_session_id_is_not_successful() {
+        String      expectedSessionIDStr    = randString();
+        String      expectedUserID          = randString();
+        String      expectedSessionKey      = randString();
+        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
 
-        Session session = new Session(
-            expectedUserID,
-                expectedSessionPostfix,
-            expectedCreatedAt,
-            expectedRoles,
-            "a-token",
-            token,
-            expectedTokenID
+        when(sessionIDShaper.parse(any()))
+                .thenReturn(expectedSessionID);
+
+        when(sessionRepository.findByID(any()))
+                .thenReturn(Optional.empty());
+
+        assertThrows(SessionNotFoundException.class, () -> sut.getSession(expectedSessionIDStr));
+    }
+
+    @Test
+    public void Getting_session_by_invalid_id_is_not_successful() {
+        String expectedSessionIDStr = randString();
+
+        when(sessionIDShaper.parse(any()))
+                .thenThrow(InvalidSessionIDException.class);
+
+        assertThrows(SessionNotFoundException.class, () -> sut.getSession(expectedSessionIDStr));
+    }
+
+    @Test
+    public void Getting_sessions_by_existing_user_id_is_successful() {
+        List<Session> expectedSessions = randSessionsList();
+
+        when(sessionRepository.findAllByUserID(any()))
+                .thenReturn(expectedSessions);
+
+        List<Session> actualSessions = sut.getSessionsByUserID("userID");
+
+        assertEquals(expectedSessions.size(), actualSessions.size());
+        assertTrue(new HashSet<>(expectedSessions).containsAll(actualSessions));
+        assertTrue(new HashSet<>(actualSessions).containsAll(expectedSessions));
+    }
+
+    @Test
+    public void Getting_sessions_by_not_existing_user_id_is_not_successful() {
+        List<Session> expectedSessions = new ArrayList<>();
+
+        when(sessionRepository.findAllByUserID(any()))
+                .thenReturn(expectedSessions);
+
+        assertThrows(UserSessionsNotFoundException.class, () -> sut.getSessionsByUserID("userID"));
+    }
+
+    @Test
+    public void Refreshing_session_by_valid_token_is_successful() {
+        String      expectedSessionIDStr    = randString();
+        String      expectedUserID          = randString();
+        String      expectedSessionKey      = randString();
+        String      expectedTokenID         = randString();
+        String      expectedNewTokenID      = randString();
+        String      expectedAccessToken     = randString();
+        String      expectedNewAccessToken  = randString();
+        String      expectedRefreshToken    = randString();
+        String      expectedNewRefreshToken = randString();
+        String[]    expectedRoles           = new String[]{randString()};
+        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+
+        TokenClaims expectedTokenClaims = new TokenClaims(
+                expectedUserID,
+                expectedSessionIDStr,
+                expectedTokenID,
+                expectedRoles
         );
 
-        SessionID sessionIDModel = new SessionID(expectedUserID, expectedSessionID);
-
-        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
-        when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionRepository.findByID(any())).thenReturn(Optional.of(session));
-        when(sessionRepository.deleteByID(any())).thenReturn(true);
-
-        assertDoesNotThrow(() -> sut.deleteSession(token));
-
-        verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
-        verify(sessionRepository).findByID(any());
-        verify(sessionRepository).deleteByID(eq(sessionIDModel));
-    }
-
-    @Test
-    void deleteSession_SessionRemovingError() {
-        String token = generateTestRefreshTokenBuilder()
-            .claim("sid", expectedSessionID)
-            .setId(expectedTokenID)
-            .compact();
-
-        Session session = new Session(
-            expectedUserID,
-                expectedSessionPostfix,
-            expectedCreatedAt,
-            expectedRoles,
-            "a-token",
-            token,
-            expectedTokenID
+        TokenClaims expectedRefreshedTokenClaims = new TokenClaims(
+                expectedUserID,
+                expectedSessionIDStr,
+                expectedNewTokenID,
+                expectedRoles
         );
 
-        SessionID sessionIDModel = new SessionID(expectedUserID, expectedSessionID);
-
-        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
-        when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionRepository.findByID(any())).thenReturn(Optional.of(session));
-        when(sessionRepository.deleteByID(any())).thenReturn(false);
-
-        assertThrows(SessionRemovingException.class,() -> sut.deleteSession(token));
-
-        verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
-        verify(sessionRepository).findByID(any());
-        verify(sessionRepository).deleteByID(eq(sessionIDModel));
-    }
-
-    @Test
-    void deleteSession_InvalidToken() {
-        String invalidRefreshToken = "r-token";
-
-        Session session = new Session(
-            expectedUserID,
-                expectedSessionPostfix,
-            expectedCreatedAt,
-            expectedRoles,
-            "a-token",
-            "4token",
-            expectedTokenID
+        Session expectedSession = new Session(
+                expectedUserID,
+                expectedSessionKey,
+                Instant.now(),
+                expectedRoles,
+                expectedAccessToken,
+                expectedRefreshToken,
+                expectedTokenID
         );
 
-        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
-        when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionRepository.findByID(any())).thenReturn(Optional.of(session));
-
-        assertThrows(InvalidTokenException.class, () -> sut.deleteSession(invalidRefreshToken));
-
-        verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionKeyGenerator, never()).getKeyLength();
-        verify(sessionRepository, never()).findByID(any());
-        verify(sessionRepository, never()).deleteByID(any());
-    }
-
-    @Test
-    void deleteSession_InvalidToken_UsedToken() {
-        String invalidRefreshToken = generateTestRefreshTokenBuilder()
-            .claim("sid", expectedSessionID)
-            .setId("id")
-            .compact();
-
-        Session session = new Session(
-            expectedUserID,
-                expectedSessionPostfix,
-            expectedCreatedAt,
-            expectedRoles,
-            "a-token",
-            generateTestRefreshTokenBuilder()
-                .claim("sid", expectedSessionID)
-                .setId(expectedTokenID)
-                .compact(),
-            expectedTokenID
+        Session expectedRefreshedSession = new Session(
+                expectedUserID,
+                expectedSessionKey,
+                Instant.now(),
+                expectedRoles,
+                expectedNewAccessToken,
+                expectedNewRefreshToken,
+                expectedNewTokenID
         );
 
-        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
-        when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionRepository.findByID(any())).thenReturn(Optional.of(session));
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
+                .thenReturn(expectedTokenClaims);
 
-        assertThrows(InvalidTokenException.class, () -> sut.deleteSession(invalidRefreshToken));
+        when(sessionIDShaper.parse(eq(expectedSessionIDStr)))
+                .thenReturn(expectedSessionID);
 
-        verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
+        when(sessionRepository.findByID(eq(expectedSessionID)))
+                .thenReturn(Optional.of(expectedSession));
 
-        verify(sessionRepository).findByID(any());
-        verify(sessionRepository, never()).deleteByID(any());
+        when(tokenIDGenerator.generate())
+                .thenReturn(expectedNewTokenID);
+
+        when(tokenService.generateAccessToken(eq(expectedRefreshedTokenClaims)))
+                .thenReturn(expectedNewAccessToken);
+
+        when(tokenService.generateRefreshToken(eq(expectedRefreshedTokenClaims)))
+                .thenReturn(expectedNewRefreshToken);
+
+        when(sessionRepository.insert(any()))
+                .then(returnsFirstArg());
+
+        Session actualSession = sut.refreshSession(expectedRefreshToken);
+
+        assertTrue(isSessionTheSameButCreatedAfter(expectedRefreshedSession, actualSession));
+
+        verify(sessionRepository)
+                .insert(any());
     }
 
     @Test
-    void deleteSession_InvalidToken_InvalidSessionID() {
-        String invalidRefreshToken = generateTestRefreshTokenBuilder()
-            .claim("sid", "invalidSessionID")
-            .setId("id")
-            .compact();
+    public void Refreshing_session_by_invalid_token_id_is_not_successful() {
+        String expectedRefreshToken = randString();
 
-        Session session = new Session(
-            expectedUserID,
-                expectedSessionPostfix,
-            expectedCreatedAt,
-            expectedRoles,
-            "a-token",
-            generateTestRefreshTokenBuilder()
-                .claim("sid", expectedSessionID)
-                .setId(expectedTokenID)
-                .compact(),
-            expectedTokenID
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
+                .thenThrow(InvalidTokenException.class);
+
+        assertThrows(InvalidTokenException.class, () -> sut.refreshSession(expectedRefreshToken));
+    }
+
+    @Test
+    public void Refreshing_session_by_invalid_session_id_is_not_successful() {
+        String      expectedSessionIDStr    = randString();
+        String      expectedUserID          = randString();
+        String      expectedTokenID         = randString();
+        String      expectedRefreshToken    = randString();
+        String[]    expectedRoles           = new String[]{randString()};
+
+        TokenClaims expectedTokenClaims = new TokenClaims(
+                expectedUserID,
+                expectedSessionIDStr,
+                expectedTokenID,
+                expectedRoles
         );
 
-        when(sessionKeyGenerator.getKeyLength()).thenReturn(sessionPostfixLength);
-        when(jwtUtil.getRefreshTokenParser()).thenReturn(refreshTokenParser);
-        when(sessionRepository.findByID(any())).thenReturn(Optional.empty());
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
+                .thenReturn(expectedTokenClaims);
 
-        assertThrows(InvalidTokenException.class, () -> sut.deleteSession(invalidRefreshToken));
+        when(sessionIDShaper.parse(eq(expectedSessionIDStr)))
+                .thenThrow(InvalidSessionIDException.class);
 
-        verify(jwtUtil).getRefreshTokenParser();
-        verify(sessionKeyGenerator, atLeastOnce()).getKeyLength();
-        verify(sessionRepository).findByID(any());
-        verify(sessionRepository, never()).deleteByID(any());
+        assertThrows(InvalidTokenException.class, () -> sut.refreshSession(expectedRefreshToken));
     }
 
     @Test
-    void deleteSessionsByUserID() {
-        when(sessionRepository.existsByUserID(any())).thenReturn(true);
-        when(sessionRepository.deleteAllByUserID(any())).thenReturn(true);
+    public void Refreshing_session_with_invalid_token_id_is_not_successful() {
+        String      expectedSessionIDStr    = randString();
+        String      expectedUserID          = randString();
+        String      expectedSessionKey      = randString();
+        String      expectedTokenID         = randString();
+        String      expectedInvalidTokenID  = randString();
+        String      expectedAccessToken     = randString();
+        String      expectedRefreshToken    = randString();
+        String[]    expectedRoles           = new String[]{randString()};
+        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
 
-        assertDoesNotThrow(() -> sut.deleteSessionsByUserID(expectedUserID));
+        TokenClaims expectedTokenClaims = new TokenClaims(
+                expectedUserID,
+                expectedSessionIDStr,
+                expectedInvalidTokenID,
+                expectedRoles
+        );
 
-        verify(sessionRepository).existsByUserID(eq(expectedUserID));
-        verify(sessionRepository).deleteAllByUserID(eq(expectedUserID));
+        Session expectedSession = new Session(
+                expectedUserID,
+                expectedSessionKey,
+                Instant.now(),
+                expectedRoles,
+                expectedAccessToken,
+                expectedRefreshToken,
+                expectedTokenID
+        );
+
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
+                .thenReturn(expectedTokenClaims);
+
+        when(sessionIDShaper.parse(eq(expectedSessionIDStr)))
+                .thenReturn(expectedSessionID);
+
+        when(sessionRepository.findByID(eq(expectedSessionID)))
+                .thenReturn(Optional.of(expectedSession));
+
+        assertThrows(InvalidTokenException.class, () -> sut.refreshSession(expectedRefreshToken));
     }
 
     @Test
-    void deleteSessionsByUserID_UserSessionsNotFound() {
-        when(sessionRepository.existsByUserID(any())).thenReturn(false);
+    public void Refreshing_session_by_not_existing_session_id_is_not_successful() {
+        String      expectedSessionIDStr    = randString();
+        String      expectedUserID          = randString();
+        String      expectedSessionKey      = randString();
+        String      expectedTokenID         = randString();
+        String      expectedRefreshToken    = randString();
+        String[]    expectedRoles           = new String[]{randString()};
+        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+
+        TokenClaims expectedTokenClaims = new TokenClaims(
+                expectedUserID,
+                expectedSessionIDStr,
+                expectedTokenID,
+                expectedRoles
+        );
+
+        when(tokenService.parseRefreshToken(expectedRefreshToken))
+                .thenReturn(expectedTokenClaims);
+
+        when(sessionIDShaper.parse(any()))
+                .thenReturn(expectedSessionID);
+
+        when(sessionRepository.findByID(any()))
+                .thenReturn(Optional.empty());
+
+        assertThrows(InvalidTokenException.class, () -> sut.refreshSession(expectedRefreshToken));
+    }
+
+    @Test
+    public void Deleting_session_by_valid_token_is_successful() {
+        String      expectedSessionIDStr    = randString();
+        String      expectedUserID          = randString();
+        String      expectedSessionKey      = randString();
+        String      expectedTokenID         = randString();
+        String      expectedAccessToken     = randString();
+        String      expectedRefreshToken    = randString();
+        String[]    expectedRoles           = new String[]{randString()};
+        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+
+        TokenClaims expectedTokenClaims = new TokenClaims(
+                expectedUserID,
+                expectedSessionIDStr,
+                expectedTokenID,
+                expectedRoles
+        );
+
+        Session expectedSession = new Session(
+                expectedUserID,
+                expectedSessionKey,
+                Instant.now(),
+                expectedRoles,
+                expectedAccessToken,
+                expectedRefreshToken,
+                expectedTokenID
+        );
+
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
+                .thenReturn(expectedTokenClaims);
+
+        when(sessionIDShaper.parse(eq(expectedSessionIDStr)))
+                .thenReturn(expectedSessionID);
+
+        when(sessionRepository.findByID(eq(expectedSessionID)))
+                .thenReturn(Optional.of(expectedSession));
+
+        sut.deleteSession(expectedRefreshToken);
+
+        verify(sessionRepository)
+                .deleteByID(eq(expectedSessionID));
+    }
+
+    @Test
+    public void Deleting_session_by_invalid_token_is_not_successful() {
+        String expectedRefreshToken = randString();
+
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
+                .thenThrow(InvalidTokenException.class);
+
+        assertThrows(InvalidTokenException.class, () -> sut.deleteSession(expectedRefreshToken));
+    }
+
+    @Test
+    public void Deleting_session_by_invalid_session_id_is_not_successful() {
+        String expectedRefreshToken = randString();
+        String expectedSessionIDStr = randString();
+        String expectedUserID = randString();
+        String expectedTokenID = randString();
+        String[] expectedRoles = new String[]{randString()};
+
+        TokenClaims expectedTokenClaims = new TokenClaims(
+                expectedUserID,
+                expectedSessionIDStr,
+                expectedTokenID,
+                expectedRoles
+        );
+
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
+                .thenReturn(expectedTokenClaims);
+
+        when(sessionIDShaper.parse(eq(expectedSessionIDStr)))
+                .thenThrow(InvalidSessionIDException.class);
+
+        assertThrows(InvalidTokenException.class, () -> sut.deleteSession(expectedRefreshToken));
+    }
+
+    @Test
+    public void Deleting_session_by_not_existing_session_id_is_not_successful() {
+        String      expectedSessionIDStr    = randString();
+        String      expectedUserID          = randString();
+        String      expectedSessionKey      = randString();
+        String      expectedTokenID         = randString();
+        String      expectedRefreshToken    = randString();
+        String[]    expectedRoles           = new String[]{randString()};
+        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+
+        TokenClaims expectedTokenClaims = new TokenClaims(
+                expectedUserID,
+                expectedSessionIDStr,
+                expectedTokenID,
+                expectedRoles
+        );
+
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
+                .thenReturn(expectedTokenClaims);
+
+        when(sessionIDShaper.parse(eq(expectedSessionIDStr)))
+                .thenReturn(expectedSessionID);
+
+        when(sessionRepository.findByID(any()))
+                .thenReturn(Optional.empty());
+
+        assertThrows(InvalidTokenException.class, () -> sut.deleteSession(expectedRefreshToken));
+    }
+
+    @Test
+    public void Deleting_user_sessions_by_existing_user_id_is_successful() {
+        String expectedUserID = randString();
+
+        when(sessionRepository.existsByUserID(eq(expectedUserID)))
+                .thenReturn(true);
+
+        when(sessionRepository.deleteAllByUserID(eq(expectedUserID)))
+                .thenReturn(true);
+
+        sut.deleteSessionsByUserID(expectedUserID);
+
+        verify(sessionRepository)
+                .deleteAllByUserID(eq(expectedUserID));
+    }
+
+    @Test
+    public void Deleting_user_sessions_by_not_existing_user_id_is_not_successful() {
+        String expectedUserID = randString();
+
+        when(sessionRepository.existsByUserID(eq(expectedUserID)))
+                .thenReturn(false);
+
+        when(sessionRepository.deleteAllByUserID(eq(expectedUserID)))
+                .thenReturn(true);
 
         assertThrows(UserSessionsNotFoundException.class, () -> sut.deleteSessionsByUserID(expectedUserID));
 
-        verify(sessionRepository).existsByUserID(eq(expectedUserID));
-        verify(sessionRepository, never()).deleteAllByUserID(any());
+        verify(sessionRepository, never())
+                .deleteAllByUserID(eq(expectedUserID));
     }
 
     @Test
-    void deleteSessionsByUserID_UserSessionsRemovingError() {
-        when(sessionRepository.existsByUserID(any())).thenReturn(true);
-        when(sessionRepository.deleteAllByUserID(any())).thenReturn(false);
+    public void Deleting_user_sessions_with_error_is_not_successful() {
+        String expectedUserID = randString();
+
+        when(sessionRepository.existsByUserID(eq(expectedUserID)))
+                .thenReturn(true);
+
+        when(sessionRepository.deleteAllByUserID(eq(expectedUserID)))
+                .thenReturn(false);
 
         assertThrows(UserSessionsRemovingException.class, () -> sut.deleteSessionsByUserID(expectedUserID));
 
-        verify(sessionRepository).existsByUserID(eq(expectedUserID));
-        verify(sessionRepository).deleteAllByUserID(eq(expectedUserID));
+        verify(sessionRepository)
+                .deleteAllByUserID(eq(expectedUserID));
     }
 
-    private static boolean compare(Session session1, Session session2) {
-        if (
-            session1.getUserID().equals(session2.getUserID()) &&
-            session1.getSessionKey().equals(session2.getSessionKey()) &&
-            session1.getCreatedAt().equals(session2.getCreatedAt()) &&
-            session1.getRoles().length == session2.getRoles().length &&
-            session1.getAccessToken().equals(session2.getAccessToken()) &&
-            session1.getRefreshToken().equals(session2.getRefreshToken()) &&
-            session1.getTokenID().equals(session2.getTokenID())
-        ) {
-            for (String role : session1.getRoles()) {
-                if (!Arrays.asList(session2.getRoles()).contains(role)) return false;
-            }
+    private int randStringLength() {
+        int stringLengthBound = 200;
+        return new Random().nextInt(stringLengthBound - 1) + 1;
+    }
 
-            return true;
+    private String randString() {
+        return RandomStringUtils.random(randStringLength());
+    }
+    private String[] randStringArray() {
+        int length = new Random().nextInt(5);
+        String[] array = new String[length];
+
+        for (int i = 0; i < length; ++i) {
+            array[i] = randString();
         }
 
-        return false;
+        return array;
     }
 
-    private boolean compareStringArraysContent(String[] expectedArray, String[] actualArray) {
-        if (expectedArray.length != actualArray.length) return false;
-
-        for (String expectedStr : expectedArray) if ( ! Arrays.asList(actualArray).contains(expectedStr)) return false;
-
-        return true;
+    private boolean isSessionTheSameButCreatedAfter(Session session1, Session session2) {
+        return  session1.getUserID().equals(session2.getUserID()) &&
+                session1.getSessionKey().equals(session2.getSessionKey()) &&
+                session1.getTokenID().equals(session2.getTokenID()) &&
+                session1.getAccessToken().equals(session2.getAccessToken()) &&
+                session1.getRefreshToken().equals(session2.getRefreshToken()) &&
+                session1.getRoles().length == session2.getRoles().length &&
+                new HashSet<>(List.of(session1.getRoles())).containsAll(List.of(session2.getRoles())) &&
+                new HashSet<>(List.of(session2.getRoles())).containsAll(List.of(session1.getRoles())) &&
+                session2.getCreatedAt().isAfter(session1.getCreatedAt());
     }
 
-    private JwtBuilder generateTestAccessTokenBuilder() {
-        return Jwts.builder()
-            .signWith(Keys.hmacShaKeyFor(BASE64.decode(accessTokenSecretKey)))
-            .claim("test", "access");
-    }
+    private List<Session> randSessionsList() {
+        int sessionsCount = new Random().nextInt(5 - 1) + 1;
 
-    private JwtBuilder generateTestRefreshTokenBuilder() {
-        return Jwts.builder()
-            .signWith(Keys.hmacShaKeyFor(BASE64.decode(refreshTokenSecretKey)))
-            .claim("test", "refresh");
+        return new ArrayList<>() {{
+            for (int i = 0; i < sessionsCount; ++i) {
+                add(new Session(
+                        randString(),
+                        randString(),
+                        Instant.now(),
+                        randStringArray(),
+                        randString(),
+                        randString(),
+                        randString()
+                ));
+            }
+        }};
     }
 }

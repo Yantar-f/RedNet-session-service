@@ -17,8 +17,8 @@ import java.time.Instant;
 public class AuthenticationExceptionHandler implements AuthenticationEntryPoint {
     @Override
     public void commence(
-        HttpServletRequest request,
-        HttpServletResponse response,
+        HttpServletRequest      request,
+        HttpServletResponse     response,
         AuthenticationException authException
     ) throws IOException, ServletException {
         HttpStatus status = HttpStatus.UNAUTHORIZED;

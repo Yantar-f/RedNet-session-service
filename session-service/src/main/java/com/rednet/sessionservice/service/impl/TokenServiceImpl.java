@@ -12,6 +12,7 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Date;
@@ -19,6 +20,7 @@ import java.util.Date;
 import static io.jsonwebtoken.SignatureAlgorithm.HS256;
 import static io.jsonwebtoken.io.Decoders.BASE64;
 
+@Service
 public class TokenServiceImpl implements TokenService {
     private final String    accessTokenIssuer;
     private final String    accessTokenSecretKey;

@@ -48,21 +48,21 @@ public class Session implements Serializable {
     }
 
     public Session(
-        String userID,
-        String sessionKey,
-        Instant createdAt,
-        String[] roles,
-        String accessToken,
-        String refreshToken,
-        String tokenID
+        String      userID,
+        String      sessionKey,
+        Instant     createdAt,
+        String[]    roles,
+        String      accessToken,
+        String      refreshToken,
+        String      tokenID
     ) {
-        this.userID = userID;
-        this.sessionKey = sessionKey;
-        this.createdAt = createdAt;
-        this.roles = roles;
-        this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
-        this.tokenID = tokenID;
+        this.userID         = userID;
+        this.sessionKey     = sessionKey;
+        this.createdAt      = createdAt;
+        this.roles          = roles;
+        this.accessToken    = accessToken;
+        this.refreshToken   = refreshToken;
+        this.tokenID        = tokenID;
 
     }
 

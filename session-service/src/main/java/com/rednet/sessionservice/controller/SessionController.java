@@ -38,7 +38,8 @@ public class SessionController {
 
     @GetMapping(path = "/by-id", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<Session> getSession(
-        @RequestParam("id") @Length(min = 1, message = "SessionID min length is 1") String sessionID) {
+        @RequestParam("id") @Length(min = 1, message = "SessionID min length is 1") String sessionID
+    ) {
         return ResponseEntity.ok(sessionService.getSession(sessionID));
     }
 

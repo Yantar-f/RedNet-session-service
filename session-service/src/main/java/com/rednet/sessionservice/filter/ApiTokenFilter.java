@@ -1,9 +1,8 @@
 package com.rednet.sessionservice.filter;
 
-import com.rednet.sessionservice.util.JwtUtil;
-import io.jsonwebtoken.Claims;
+import com.rednet.sessionservice.model.TokenClaims;
+import com.rednet.sessionservice.service.TokenService;
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.SignatureException;
@@ -27,21 +26,21 @@ import java.util.Arrays;
 @Component
 public class ApiTokenFilter extends OncePerRequestFilter {
     private final String apiTokenCookieName;
-    private final JwtParser apiTokenParser;
+    private final TokenService tokenService;
 
     public ApiTokenFilter(
         @Value("${rednet.app.security.api-token.cookie-name}") String apiTokenCookieName,
-        JwtUtil jwtUtil
+        TokenService tokenService
     ) {
         this.apiTokenCookieName = apiTokenCookieName;
-        this.apiTokenParser = jwtUtil.getApiTokenParser();
+        this.tokenService = tokenService;
     }
 
     @Override
     protected void doFilterInternal(
-        @Nonnull HttpServletRequest request,
-        @Nonnull HttpServletResponse response,
-        @Nonnull FilterChain filterChain
+        @Nonnull HttpServletRequest     request,
+        @Nonnull HttpServletResponse    response,
+        @Nonnull FilterChain            filterChain
     ) throws ServletException, IOException {
         Cookie[] cookies = request.getCookies();
 
@@ -60,12 +59,13 @@ public class ApiTokenFilter extends OncePerRequestFilter {
         }
 
         try {
-            Claims claims = apiTokenParser.parseClaimsJws(apiTokenCookie.getValue()).getBody();
+            TokenClaims claims = tokenService.parseApiToken(apiTokenCookie.getValue());
+
             UsernamePasswordAuthenticationToken contextAuthToken =
                 new UsernamePasswordAuthenticationToken(
-                    claims.getSubject(),
+                    claims.getSubjectID(),
                     apiTokenCookie.getValue(),
-                    Arrays.stream((String[]) claims.get("roles"))
+                    Arrays.stream(claims.getRoles())
                         .map(SimpleGrantedAuthority::new)
                         .toList()
                 );

@@ -46,9 +46,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(
         @NonNull HttpRequestMethodNotSupportedException ex,
-        @NonNull HttpHeaders headers,
+        @NonNull HttpHeaders    headers,
         @NonNull HttpStatusCode status,
-        @NonNull WebRequest request
+        @NonNull WebRequest     request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
     }
@@ -56,9 +56,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(
         @NonNull HttpMediaTypeNotSupportedException ex,
-        @NonNull HttpHeaders headers,
+        @NonNull HttpHeaders    headers,
         @NonNull HttpStatusCode status,
-        @NonNull WebRequest request
+        @NonNull WebRequest     request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
     }
@@ -66,9 +66,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleHttpMediaTypeNotAcceptable(
         @NonNull HttpMediaTypeNotAcceptableException ex,
-        @NonNull HttpHeaders headers,
+        @NonNull HttpHeaders    headers,
         @NonNull HttpStatusCode status,
-        @NonNull WebRequest request
+        @NonNull WebRequest     request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
     }
@@ -76,9 +76,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleMissingServletRequestParameter(
         @NonNull MissingServletRequestParameterException ex,
-        @NonNull HttpHeaders headers,
+        @NonNull HttpHeaders    headers,
         @NonNull HttpStatusCode status,
-        @NonNull WebRequest request
+        @NonNull WebRequest     request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
     }
@@ -86,9 +86,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleMissingServletRequestPart(
         @NonNull MissingServletRequestPartException ex,
-        @NonNull HttpHeaders headers,
+        @NonNull HttpHeaders    headers,
         @NonNull HttpStatusCode status,
-        @NonNull WebRequest request
+        @NonNull WebRequest     request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
     }
@@ -96,9 +96,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleServletRequestBindingException(
         @NonNull ServletRequestBindingException ex,
-        @NonNull HttpHeaders headers,
+        @NonNull HttpHeaders    headers,
         @NonNull HttpStatusCode status,
-        @NonNull WebRequest request
+        @NonNull WebRequest     request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
     }
@@ -106,9 +106,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
         @NonNull MethodArgumentNotValidException ex,
-        @NonNull HttpHeaders headers,
+        @NonNull HttpHeaders    headers,
         @NonNull HttpStatusCode status,
-        @NonNull WebRequest request
+        @NonNull WebRequest     request
     ) {
         FieldError fieldError = ex.getBindingResult().getFieldError();
         String errorMessage = fieldError != null ? fieldError.getDefaultMessage() : "undefined constraint violation";
@@ -119,9 +119,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleNoHandlerFoundException(
         @NonNull NoHandlerFoundException ex,
-        @NonNull HttpHeaders headers,
+        @NonNull HttpHeaders    headers,
         @NonNull HttpStatusCode status,
-        @NonNull WebRequest request
+        @NonNull WebRequest     request
     ) {
         return generateErrorResponse(NOT_FOUND, extractPath(request), ex.getMessage());
     }
@@ -129,9 +129,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleAsyncRequestTimeoutException(
         @NonNull AsyncRequestTimeoutException ex,
-        @NonNull HttpHeaders headers,
+        @NonNull HttpHeaders    headers,
         @NonNull HttpStatusCode status,
-        @NonNull WebRequest request
+        @NonNull WebRequest     request
     ) {
         return generateErrorResponse(SERVICE_UNAVAILABLE, extractPath(request), ex.getMessage());
     }
@@ -139,9 +139,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotWritable(
         @NonNull HttpMessageNotWritableException ex,
-        @NonNull HttpHeaders headers,
+        @NonNull HttpHeaders    headers,
         @NonNull HttpStatusCode status,
-        @NonNull WebRequest request
+        @NonNull WebRequest     request
     ) {
         return generateErrorResponse(INTERNAL_SERVER_ERROR, extractPath(request), ex.getMessage());
     }
@@ -149,9 +149,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
         @NonNull HttpMessageNotReadableException ex,
-        @NonNull HttpHeaders headers,
+        @NonNull HttpHeaders    headers,
         @NonNull HttpStatusCode status,
-        @NonNull WebRequest request
+        @NonNull WebRequest     request
     ) {
         return generateErrorResponse(BAD_REQUEST, extractPath(request), ex.getMessage());
     }
@@ -189,9 +189,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private ResponseEntity<Object> generateErrorResponse(
-        HttpStatus httpStatus,
-        String path,
-        String errorMessage
+        HttpStatus  httpStatus,
+        String      path,
+        String      errorMessage
     ) {
         return ResponseEntity.status(httpStatus.value()).body(
             new ErrorResponseMessage(
