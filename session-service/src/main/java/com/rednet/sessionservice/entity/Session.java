@@ -148,4 +148,17 @@ public class Session implements Serializable {
                 new HashSet<>(List.of(roles)).containsAll(List.of(session.roles)) &&
                 new HashSet<>(List.of(session.roles)).containsAll(List.of(roles));
     }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "\n\tuserID: " + userID +
+                "\n\tsessionKey: " + sessionKey +
+                "\n\tcreatedAt: " + createdAt +
+                "\n\troles: " + Arrays.toString(roles) +
+                "\n\taccessToken: " + accessToken +
+                "\n\trefreshToken: " + refreshToken +
+                "\n\ttokenID: " + tokenID +
+                "\n}";
+    }
 }

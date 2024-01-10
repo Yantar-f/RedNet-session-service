@@ -178,7 +178,9 @@ class SessionServiceImpl2Test {
         String      expectedTokenID         = randString();
         String      expectedNewTokenID      = randString();
         String      expectedAccessToken     = randString();
+        String      expectedNewAccessToken  = randString();
         String      expectedRefreshToken    = randString();
+        String      expectedNewRefreshToken = randString();
         String[]    expectedRoles           = new String[]{randString()};
         SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
 
@@ -186,6 +188,13 @@ class SessionServiceImpl2Test {
                 expectedUserID,
                 expectedSessionIDStr,
                 expectedTokenID,
+                expectedRoles
+        );
+
+        TokenClaims expectedRefreshedTokenClaims = new TokenClaims(
+                expectedUserID,
+                expectedSessionIDStr,
+                expectedNewTokenID,
                 expectedRoles
         );
 
@@ -204,8 +213,8 @@ class SessionServiceImpl2Test {
                 expectedSessionKey,
                 Instant.now(),
                 expectedRoles,
-                expectedAccessToken,
-                expectedRefreshToken,
+                expectedNewAccessToken,
+                expectedNewRefreshToken,
                 expectedNewTokenID
         );
 
@@ -221,7 +230,13 @@ class SessionServiceImpl2Test {
         when(tokenIDGenerator.generate())
                 .thenReturn(expectedNewTokenID);
 
-        when(sessionRepository.insert(argThat(session -> isSessionTheSameButCreatedAfter(expectedRefreshedSession, session))))
+        when(tokenService.generateAccessToken(eq(expectedRefreshedTokenClaims)))
+                .thenReturn(expectedNewAccessToken);
+
+        when(tokenService.generateRefreshToken(eq(expectedRefreshedTokenClaims)))
+                .thenReturn(expectedNewRefreshToken);
+
+        when(sessionRepository.insert(any()))
                 .then(returnsFirstArg());
 
         Session actualSession = sut.refreshSession(expectedRefreshToken);
@@ -229,7 +244,7 @@ class SessionServiceImpl2Test {
         assertTrue(isSessionTheSameButCreatedAfter(expectedRefreshedSession, actualSession));
 
         verify(sessionRepository)
-                .insert(argThat(session -> isSessionTheSameButCreatedAfter(expectedRefreshedSession, session)));
+                .insert(any());
     }
 
     @Test
@@ -513,6 +528,8 @@ class SessionServiceImpl2Test {
         return  session1.getUserID().equals(session2.getUserID()) &&
                 session1.getSessionKey().equals(session2.getSessionKey()) &&
                 session1.getTokenID().equals(session2.getTokenID()) &&
+                session1.getAccessToken().equals(session2.getAccessToken()) &&
+                session1.getRefreshToken().equals(session2.getRefreshToken()) &&
                 session1.getRoles().length == session2.getRoles().length &&
                 new HashSet<>(List.of(session1.getRoles())).containsAll(List.of(session2.getRoles())) &&
                 new HashSet<>(List.of(session2.getRoles())).containsAll(List.of(session1.getRoles())) &&
