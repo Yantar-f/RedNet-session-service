@@ -50,9 +50,9 @@ public class TokenServiceImpl implements TokenService {
         this.refreshTokenExpirationMs   = refreshTokenExpirationMs;
         this.refreshTokenIssuer         = refreshTokenIssuer;
 
-        this.accessTokenParser  = buildParser(accessTokenSecretKey, accessTokenIssuer, accessTokenAllowedClockSkewS);
-        this.apiTokenParser     = buildParser(apiTokenSecretKey, apiTokenIssuer, apiTokenAllowedClockSkewS);
-        this.refreshTokenParser = buildParser(refreshTokenSecretKey, refreshTokenIssuer, refreshTokenAllowedClockSkewS);
+        accessTokenParser   = buildParser(accessTokenSecretKey, accessTokenIssuer, accessTokenAllowedClockSkewS);
+        apiTokenParser      = buildParser(apiTokenSecretKey, apiTokenIssuer, apiTokenAllowedClockSkewS);
+        refreshTokenParser  = buildParser(refreshTokenSecretKey, refreshTokenIssuer, refreshTokenAllowedClockSkewS);
     }
 
     @Override
