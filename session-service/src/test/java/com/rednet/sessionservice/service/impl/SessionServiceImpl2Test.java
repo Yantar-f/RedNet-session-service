@@ -6,7 +6,7 @@ import com.rednet.sessionservice.model.SessionID;
 import com.rednet.sessionservice.model.TokenClaims;
 import com.rednet.sessionservice.repository.SessionRepository;
 import com.rednet.sessionservice.service.SessionService;
-import com.rednet.sessionservice.service.SessionTokenService;
+import com.rednet.sessionservice.service.TokenService;
 import com.rednet.sessionservice.util.SessionIDShaper;
 import com.rednet.sessionservice.util.TokenIDGenerator;
 import org.apache.commons.lang.RandomStringUtils;
@@ -29,13 +29,13 @@ import static org.mockito.Mockito.*;
 class SessionServiceImpl2Test {
     private final SessionRepository     sessionRepository   = mock(SessionRepository.class);
     private final TokenIDGenerator      tokenIDGenerator    = mock(TokenIDGenerator.class);
-    private final SessionTokenService   sessionTokenService = mock(SessionTokenService.class);
+    private final TokenService          tokenService        = mock(TokenService.class);
     private final SessionIDShaper       sessionIDShaper     = mock(SessionIDShaper.class);
 
     private final SessionService sut = new SessionServiceImpl2(
             sessionRepository,
             tokenIDGenerator,
-            sessionTokenService,
+            tokenService,
             sessionIDShaper
     );
 
@@ -70,10 +70,10 @@ class SessionServiceImpl2Test {
         when(sessionIDShaper.convert(any()))
                 .thenReturn(expectedSessionIDStr);
 
-        when(sessionTokenService.generateAccessToken(any()))
+        when(tokenService.generateAccessToken(any()))
                 .thenReturn(expectedAccessToken);
 
-        when(sessionTokenService.generateRefreshToken(any()))
+        when(tokenService.generateRefreshToken(any()))
                 .thenReturn(expectedRefreshToken);
 
         when(sessionRepository.insert(any()))
@@ -209,7 +209,7 @@ class SessionServiceImpl2Test {
                 expectedNewTokenID
         );
 
-        when(sessionTokenService.parse(eq(expectedRefreshToken)))
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
                 .thenReturn(expectedTokenClaims);
 
         when(sessionIDShaper.parse(eq(expectedSessionIDStr)))
@@ -236,7 +236,7 @@ class SessionServiceImpl2Test {
     public void Refreshing_session_by_invalid_token_id_is_not_successful() {
         String expectedRefreshToken = randString();
 
-        when(sessionTokenService.parse(eq(expectedRefreshToken)))
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
                 .thenThrow(InvalidTokenException.class);
 
         assertThrows(InvalidTokenException.class, () -> sut.refreshSession(expectedRefreshToken));
@@ -257,7 +257,7 @@ class SessionServiceImpl2Test {
                 expectedRoles
         );
 
-        when(sessionTokenService.parse(any()))
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
                 .thenReturn(expectedTokenClaims);
 
         when(sessionIDShaper.parse(eq(expectedSessionIDStr)))
@@ -295,7 +295,7 @@ class SessionServiceImpl2Test {
                 expectedTokenID
         );
 
-        when(sessionTokenService.parse(eq(expectedRefreshToken)))
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
                 .thenReturn(expectedTokenClaims);
 
         when(sessionIDShaper.parse(eq(expectedSessionIDStr)))
@@ -324,7 +324,7 @@ class SessionServiceImpl2Test {
                 expectedRoles
         );
 
-        when(sessionTokenService.parse(any()))
+        when(tokenService.parseRefreshToken(expectedRefreshToken))
                 .thenReturn(expectedTokenClaims);
 
         when(sessionIDShaper.parse(any()))
@@ -364,7 +364,7 @@ class SessionServiceImpl2Test {
                 expectedTokenID
         );
 
-        when(sessionTokenService.parse(eq(expectedRefreshToken)))
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
                 .thenReturn(expectedTokenClaims);
 
         when(sessionIDShaper.parse(eq(expectedSessionIDStr)))
@@ -383,7 +383,7 @@ class SessionServiceImpl2Test {
     public void Deleting_session_by_invalid_token_is_not_successful() {
         String expectedRefreshToken = randString();
 
-        when(sessionTokenService.parse(eq(expectedRefreshToken)))
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
                 .thenThrow(InvalidTokenException.class);
 
         assertThrows(InvalidTokenException.class, () -> sut.deleteSession(expectedRefreshToken));
@@ -404,7 +404,7 @@ class SessionServiceImpl2Test {
                 expectedRoles
         );
 
-        when(sessionTokenService.parse(eq(expectedRefreshToken)))
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
                 .thenReturn(expectedTokenClaims);
 
         when(sessionIDShaper.parse(eq(expectedSessionIDStr)))
@@ -430,10 +430,10 @@ class SessionServiceImpl2Test {
                 expectedRoles
         );
 
-        when(sessionTokenService.parse(any()))
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
                 .thenReturn(expectedTokenClaims);
 
-        when(sessionIDShaper.parse(any()))
+        when(sessionIDShaper.parse(eq(expectedSessionIDStr)))
                 .thenReturn(expectedSessionID);
 
         when(sessionRepository.findByID(any()))
@@ -512,6 +512,7 @@ class SessionServiceImpl2Test {
     private boolean isSessionTheSameButCreatedAfter(Session session1, Session session2) {
         return  session1.getUserID().equals(session2.getUserID()) &&
                 session1.getSessionKey().equals(session2.getSessionKey()) &&
+                session1.getTokenID().equals(session2.getTokenID()) &&
                 session1.getRoles().length == session2.getRoles().length &&
                 new HashSet<>(List.of(session1.getRoles())).containsAll(List.of(session2.getRoles())) &&
                 new HashSet<>(List.of(session2.getRoles())).containsAll(List.of(session1.getRoles())) &&
