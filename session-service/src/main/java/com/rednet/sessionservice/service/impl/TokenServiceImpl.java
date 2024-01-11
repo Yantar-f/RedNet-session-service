@@ -15,7 +15,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import static io.jsonwebtoken.SignatureAlgorithm.HS256;
 import static io.jsonwebtoken.io.Decoders.BASE64;
@@ -84,13 +86,17 @@ public class TokenServiceImpl implements TokenService {
 
     private TokenClaims parseWith(JwtParser parser, String token) {
         try {
-            Claims claimsMap = parser.parseClaimsJws(token).getBody();
+            Claims  claimsMap = parser.parseClaimsJws(token).getBody();
+            List<?> convertedRoles = claimsMap.get("roles", ArrayList.class);
 
             return new TokenClaims(
                     claimsMap.getSubject(),
                     claimsMap.get("sid", String.class),
                     claimsMap.getId(),
-                    claimsMap.get("roles", String[].class)
+                    convertedRoles
+                            .stream()
+                            .map(obj -> (String) obj)
+                            .toArray(String[]::new)
             );
         } catch (
                 SignatureException |

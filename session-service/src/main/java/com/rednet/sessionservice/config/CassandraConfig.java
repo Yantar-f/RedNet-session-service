@@ -50,15 +50,15 @@ public class CassandraConfig extends AbstractCassandraConfiguration {
     public String[] getEntityBasePackages() {
         return new String[]{"com.rednet"};
     }
-
+/*
     @Override
     @Nonnull
     protected List<CreateKeyspaceSpecification> getKeyspaceCreations() {
-        final CreateKeyspaceSpecification specification = CreateKeyspaceSpecification.createKeyspace(keyspace)
-                .ifNotExists()
+        final CreateKeyspaceSpecification specification = CreateKeyspaceSpecification
+                .createKeyspace(keyspace)
                 .with(KeyspaceOption.DURABLE_WRITES, true)
                 .withSimpleReplication();
 
         return List.of(specification);
-    }
+    }*/
 }

@@ -244,7 +244,7 @@ class SessionServiceImplTest {
         assertTrue(isSessionTheSameButCreatedAfter(expectedRefreshedSession, actualSession));
 
         verify(sessionRepository)
-                .insert(any());
+                .insert(argThat(session -> isSessionTheSameButCreatedAfter(expectedRefreshedSession, session)));
     }
 
     @Test
@@ -388,6 +388,9 @@ class SessionServiceImplTest {
         when(sessionRepository.findByID(eq(expectedSessionID)))
                 .thenReturn(Optional.of(expectedSession));
 
+        when(sessionRepository.deleteByID(eq(expectedSessionID)))
+                .thenReturn(true);
+
         sut.deleteSession(expectedRefreshToken);
 
         verify(sessionRepository)
@@ -455,6 +458,52 @@ class SessionServiceImplTest {
                 .thenReturn(Optional.empty());
 
         assertThrows(InvalidTokenException.class, () -> sut.deleteSession(expectedRefreshToken));
+    }
+
+    @Test
+    public void Deleting_session_with_error_is_not_successful() {
+        String      expectedSessionIDStr    = randString();
+        String      expectedUserID          = randString();
+        String      expectedSessionKey      = randString();
+        String      expectedTokenID         = randString();
+        String      expectedAccessToken     = randString();
+        String      expectedRefreshToken    = randString();
+        String[]    expectedRoles           = new String[]{randString()};
+        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+
+        TokenClaims expectedTokenClaims = new TokenClaims(
+                expectedUserID,
+                expectedSessionIDStr,
+                expectedTokenID,
+                expectedRoles
+        );
+
+        Session expectedSession = new Session(
+                expectedUserID,
+                expectedSessionKey,
+                Instant.now(),
+                expectedRoles,
+                expectedAccessToken,
+                expectedRefreshToken,
+                expectedTokenID
+        );
+
+        when(tokenService.parseRefreshToken(eq(expectedRefreshToken)))
+                .thenReturn(expectedTokenClaims);
+
+        when(sessionIDShaper.parse(eq(expectedSessionIDStr)))
+                .thenReturn(expectedSessionID);
+
+        when(sessionRepository.findByID(any()))
+                .thenReturn(Optional.of(expectedSession));
+
+        when(sessionRepository.deleteByID(eq(expectedSessionID)))
+                .thenReturn(false);
+
+        assertThrows(SessionRemovingException.class, () -> sut.deleteSession(expectedRefreshToken));
+
+        verify(sessionRepository)
+                .deleteByID(eq(expectedSessionID));
     }
 
     @Test

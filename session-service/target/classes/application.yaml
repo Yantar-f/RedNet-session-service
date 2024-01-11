@@ -11,7 +11,7 @@ spring:
         contact-points: localhost:9042
         local-datacenter: datacenter1
         keyspace-name: sessionkeyspace
-        schema-action: recreate
+        schema-action: create_if_not_exists
     cloud:
         config:
             fail-fast: true
