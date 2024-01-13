@@ -22,9 +22,9 @@ public class CassandraConfig extends AbstractCassandraConfiguration {
         @Value("${spring.cassandra.keyspace-name}") String          keyspace,
         @Value("${spring.cassandra.schema-action}") SchemaAction    schemaAction
     ) {
-        this.contactPoints  = contactPoints;
-        this.keyspace       = keyspace;
-        this.schemaAction   = schemaAction;
+        this.contactPoints = contactPoints;
+        this.keyspace = keyspace;
+        this.schemaAction = schemaAction;
     }
 
     @Override

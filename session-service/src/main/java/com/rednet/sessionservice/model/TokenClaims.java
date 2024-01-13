@@ -10,11 +10,16 @@ public class TokenClaims {
     private String      tokenID;
     private String[]    roles;
 
-    public TokenClaims(String subjectID, String sessionID, String tokenID, String[] roles) {
-        this.subjectID  = subjectID;
-        this.sessionID  = sessionID;
-        this.tokenID    = tokenID;
-        this.roles      = roles;
+    public TokenClaims(
+            String subjectID,
+            String sessionID,
+            String tokenID,
+            String[] roles
+    ) {
+        this.subjectID = subjectID;
+        this.sessionID = sessionID;
+        this.tokenID = tokenID;
+        this.roles = roles;
     }
 
     public String getSubjectID() {

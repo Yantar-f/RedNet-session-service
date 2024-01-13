@@ -27,10 +27,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class SessionServiceImplTest {
-    private final SessionRepository     sessionRepository   = mock(SessionRepository.class);
-    private final TokenIDGenerator      tokenIDGenerator    = mock(TokenIDGenerator.class);
-    private final TokenService          tokenService        = mock(TokenService.class);
-    private final SessionIDShaper       sessionIDShaper     = mock(SessionIDShaper.class);
+    private final SessionRepository     sessionRepository = mock(SessionRepository.class);
+    private final TokenIDGenerator      tokenIDGenerator = mock(TokenIDGenerator.class);
+    private final TokenService          tokenService = mock(TokenService.class);
+    private final SessionIDShaper       sessionIDShaper = mock(SessionIDShaper.class);
 
     private final SessionService sut = new SessionServiceImpl(
             sessionRepository,
@@ -41,15 +41,15 @@ class SessionServiceImplTest {
 
     @Test
     void Creating_session_is_successful() {
-        String      expectedSessionIDStr    = randString();
-        String      expectedUserID          = randString();
-        String      expectedSessionKey      = randString();
-        String      expectedTokenID         = randString();
-        String      expectedAccessToken     = randString();
-        String      expectedRefreshToken    = randString();
-        Instant     expectedCreatedAtAfter  = Instant.now();
-        String[]    expectedRoles           = new String[]{randString()};
-        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+        String      expectedSessionIDStr = randString();
+        String      expectedUserID = randString();
+        String      expectedSessionKey = randString();
+        String      expectedTokenID = randString();
+        String      expectedAccessToken = randString();
+        String      expectedRefreshToken = randString();
+        Instant     expectedCreatedAtAfter = Instant.now();
+        String[]    expectedRoles = new String[]{randString()};
+        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         Session expectedSession = new Session(
                 expectedUserID,
@@ -89,15 +89,15 @@ class SessionServiceImplTest {
 
     @Test
     public void Getting_session_by_valid_id_is_successful() {
-        String      expectedSessionIDStr    = randString();
-        String      expectedUserID          = randString();
-        String      expectedSessionKey      = randString();
-        String      expectedTokenID         = randString();
-        String      expectedAccessToken     = randString();
-        String      expectedRefreshToken    = randString();
-        Instant     expectedCreatedAtAfter  = Instant.now();
-        String[]    expectedRoles           = new String[]{randString()};
-        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+        String      expectedSessionIDStr = randString();
+        String      expectedUserID = randString();
+        String      expectedSessionKey = randString();
+        String      expectedTokenID = randString();
+        String      expectedAccessToken = randString();
+        String      expectedRefreshToken = randString();
+        Instant     expectedCreatedAtAfter = Instant.now();
+        String[]    expectedRoles = new String[]{randString()};
+        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         Session expectedSession = new Session(
                 expectedUserID,
@@ -122,10 +122,10 @@ class SessionServiceImplTest {
 
     @Test
     public void Getting_session_by_not_existing_session_id_is_not_successful() {
-        String      expectedSessionIDStr    = randString();
-        String      expectedUserID          = randString();
-        String      expectedSessionKey      = randString();
-        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+        String      expectedSessionIDStr = randString();
+        String      expectedUserID = randString();
+        String      expectedSessionKey = randString();
+        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         when(sessionIDShaper.parse(any()))
                 .thenReturn(expectedSessionID);
@@ -172,17 +172,17 @@ class SessionServiceImplTest {
 
     @Test
     public void Refreshing_session_by_valid_token_is_successful() {
-        String      expectedSessionIDStr    = randString();
-        String      expectedUserID          = randString();
-        String      expectedSessionKey      = randString();
-        String      expectedTokenID         = randString();
-        String      expectedNewTokenID      = randString();
-        String      expectedAccessToken     = randString();
-        String      expectedNewAccessToken  = randString();
-        String      expectedRefreshToken    = randString();
+        String      expectedSessionIDStr = randString();
+        String      expectedUserID = randString();
+        String      expectedSessionKey = randString();
+        String      expectedTokenID = randString();
+        String      expectedNewTokenID = randString();
+        String      expectedAccessToken = randString();
+        String      expectedNewAccessToken = randString();
+        String      expectedRefreshToken = randString();
         String      expectedNewRefreshToken = randString();
-        String[]    expectedRoles           = new String[]{randString()};
-        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+        String[]    expectedRoles = new String[]{randString()};
+        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -259,11 +259,11 @@ class SessionServiceImplTest {
 
     @Test
     public void Refreshing_session_by_invalid_session_id_is_not_successful() {
-        String      expectedSessionIDStr    = randString();
-        String      expectedUserID          = randString();
-        String      expectedTokenID         = randString();
-        String      expectedRefreshToken    = randString();
-        String[]    expectedRoles           = new String[]{randString()};
+        String      expectedSessionIDStr = randString();
+        String      expectedUserID = randString();
+        String      expectedTokenID = randString();
+        String      expectedRefreshToken = randString();
+        String[]    expectedRoles = new String[]{randString()};
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -283,15 +283,15 @@ class SessionServiceImplTest {
 
     @Test
     public void Refreshing_session_with_invalid_token_id_is_not_successful() {
-        String      expectedSessionIDStr    = randString();
-        String      expectedUserID          = randString();
-        String      expectedSessionKey      = randString();
-        String      expectedTokenID         = randString();
+        String      expectedSessionIDStr = randString();
+        String      expectedUserID = randString();
+        String      expectedSessionKey = randString();
+        String      expectedTokenID = randString();
         String      expectedInvalidTokenID  = randString();
-        String      expectedAccessToken     = randString();
-        String      expectedRefreshToken    = randString();
-        String[]    expectedRoles           = new String[]{randString()};
-        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+        String      expectedAccessToken = randString();
+        String      expectedRefreshToken = randString();
+        String[]    expectedRoles = new String[]{randString()};
+        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -324,13 +324,13 @@ class SessionServiceImplTest {
 
     @Test
     public void Refreshing_session_by_not_existing_session_id_is_not_successful() {
-        String      expectedSessionIDStr    = randString();
-        String      expectedUserID          = randString();
-        String      expectedSessionKey      = randString();
-        String      expectedTokenID         = randString();
-        String      expectedRefreshToken    = randString();
-        String[]    expectedRoles           = new String[]{randString()};
-        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+        String      expectedSessionIDStr = randString();
+        String      expectedUserID = randString();
+        String      expectedSessionKey = randString();
+        String      expectedTokenID = randString();
+        String      expectedRefreshToken = randString();
+        String[]    expectedRoles = new String[]{randString()};
+        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -353,14 +353,14 @@ class SessionServiceImplTest {
 
     @Test
     public void Deleting_session_by_valid_token_is_successful() {
-        String      expectedSessionIDStr    = randString();
-        String      expectedUserID          = randString();
-        String      expectedSessionKey      = randString();
-        String      expectedTokenID         = randString();
-        String      expectedAccessToken     = randString();
-        String      expectedRefreshToken    = randString();
-        String[]    expectedRoles           = new String[]{randString()};
-        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+        String      expectedSessionIDStr = randString();
+        String      expectedUserID = randString();
+        String      expectedSessionKey = randString();
+        String      expectedTokenID = randString();
+        String      expectedAccessToken = randString();
+        String      expectedRefreshToken = randString();
+        String[]    expectedRoles = new String[]{randString()};
+        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -409,11 +409,11 @@ class SessionServiceImplTest {
 
     @Test
     public void Deleting_session_by_invalid_session_id_is_not_successful() {
-        String expectedRefreshToken = randString();
-        String expectedSessionIDStr = randString();
-        String expectedUserID = randString();
-        String expectedTokenID = randString();
-        String[] expectedRoles = new String[]{randString()};
+        String      expectedRefreshToken = randString();
+        String      expectedSessionIDStr = randString();
+        String      expectedUserID = randString();
+        String      expectedTokenID = randString();
+        String[]    expectedRoles = new String[]{randString()};
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -433,13 +433,13 @@ class SessionServiceImplTest {
 
     @Test
     public void Deleting_session_by_not_existing_session_id_is_not_successful() {
-        String      expectedSessionIDStr    = randString();
-        String      expectedUserID          = randString();
-        String      expectedSessionKey      = randString();
-        String      expectedTokenID         = randString();
-        String      expectedRefreshToken    = randString();
-        String[]    expectedRoles           = new String[]{randString()};
-        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+        String      expectedSessionIDStr = randString();
+        String      expectedUserID = randString();
+        String      expectedSessionKey = randString();
+        String      expectedTokenID = randString();
+        String      expectedRefreshToken = randString();
+        String[]    expectedRoles = new String[]{randString()};
+        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -462,14 +462,14 @@ class SessionServiceImplTest {
 
     @Test
     public void Deleting_session_with_error_is_not_successful() {
-        String      expectedSessionIDStr    = randString();
-        String      expectedUserID          = randString();
-        String      expectedSessionKey      = randString();
-        String      expectedTokenID         = randString();
-        String      expectedAccessToken     = randString();
-        String      expectedRefreshToken    = randString();
-        String[]    expectedRoles           = new String[]{randString()};
-        SessionID   expectedSessionID       = new SessionID(expectedUserID, expectedSessionKey);
+        String      expectedSessionIDStr = randString();
+        String      expectedUserID = randString();
+        String      expectedSessionKey = randString();
+        String      expectedTokenID = randString();
+        String      expectedAccessToken = randString();
+        String      expectedRefreshToken = randString();
+        String[]    expectedRoles = new String[]{randString()};
+        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,

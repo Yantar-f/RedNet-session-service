@@ -27,16 +27,16 @@ public class SessionServiceImpl implements SessionService {
             TokenService        tokenService,
             SessionIDShaper     sessionIDShaper
     ) {
-        this.sessionRepository  = sessionRepository;
-        this.tokenIDGenerator   = tokenIDGenerator;
-        this.tokenService       = tokenService;
-        this.sessionIDShaper    = sessionIDShaper;
+        this.sessionRepository = sessionRepository;
+        this.tokenIDGenerator = tokenIDGenerator;
+        this.tokenService = tokenService;
+        this.sessionIDShaper = sessionIDShaper;
     }
 
     @Override
     public Session createSession(String userID, String[] roles) {
-        SessionID sessionID = sessionIDShaper.generate(userID);
-        String tokenID = tokenIDGenerator.generate();
+        SessionID   sessionID = sessionIDShaper.generate(userID);
+        String      tokenID = tokenIDGenerator.generate();
         TokenClaims claims = new TokenClaims(userID, sessionIDShaper.convert(sessionID), tokenID, roles);
 
         return sessionRepository.insert(new Session(

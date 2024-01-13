@@ -47,16 +47,16 @@ public class TokenServiceImpl implements TokenService {
             @Value("${rednet.app.security.api-token.issuer}") String                    apiTokenIssuer,
             @Value("${rednet.app.security.api-token.allowed-clock-skew-s}") long        apiTokenAllowedClockSkewS
     ) {
-        this.accessTokenIssuer          = accessTokenIssuer;
-        this.accessTokenSecretKey       = accessTokenSecretKey;
-        this.accessTokenExpirationMs    = accessTokenExpirationMs;
-        this.refreshTokenSecretKey      = refreshTokenSecretKey;
-        this.refreshTokenExpirationMs   = refreshTokenExpirationMs;
-        this.refreshTokenIssuer         = refreshTokenIssuer;
+        this.accessTokenIssuer = accessTokenIssuer;
+        this.accessTokenSecretKey = accessTokenSecretKey;
+        this.accessTokenExpirationMs = accessTokenExpirationMs;
+        this.refreshTokenSecretKey = refreshTokenSecretKey;
+        this.refreshTokenExpirationMs = refreshTokenExpirationMs;
+        this.refreshTokenIssuer = refreshTokenIssuer;
 
-        accessTokenParser   = buildParser(accessTokenSecretKey, accessTokenIssuer, accessTokenAllowedClockSkewS);
-        apiTokenParser      = buildParser(apiTokenSecretKey, apiTokenIssuer, apiTokenAllowedClockSkewS);
-        refreshTokenParser  = buildParser(refreshTokenSecretKey, refreshTokenIssuer, refreshTokenAllowedClockSkewS);
+        accessTokenParser = buildParser(accessTokenSecretKey, accessTokenIssuer, accessTokenAllowedClockSkewS);
+        apiTokenParser = buildParser(apiTokenSecretKey, apiTokenIssuer, apiTokenAllowedClockSkewS);
+        refreshTokenParser = buildParser(refreshTokenSecretKey, refreshTokenIssuer, refreshTokenAllowedClockSkewS);
     }
 
     @Override

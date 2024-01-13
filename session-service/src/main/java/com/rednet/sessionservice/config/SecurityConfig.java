@@ -28,9 +28,9 @@ public class SecurityConfig {
         AccessDeniedHandler         accessDeniedHandler,
         AuthenticationEntryPoint    authenticationEntryPoint
     ) {
-        this.apiTokenFilter             = apiTokenFilter;
-        this.accessDeniedHandler        = accessDeniedHandler;
-        this.authenticationEntryPoint   = authenticationEntryPoint;
+        this.apiTokenFilter = apiTokenFilter;
+        this.accessDeniedHandler = accessDeniedHandler;
+        this.authenticationEntryPoint = authenticationEntryPoint;
     }
 
     @Bean
