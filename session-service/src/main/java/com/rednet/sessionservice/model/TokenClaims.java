@@ -5,17 +5,15 @@ import java.util.HashSet;
 import java.util.List;
 
 public class TokenClaims {
-    private String      subjectID;
-    private String      sessionID;
-    private String      tokenID;
-    private String[]    roles;
+    private String subjectID;
+    private String sessionID;
+    private String tokenID;
+    private String[] roles;
 
-    public TokenClaims(
-            String subjectID,
-            String sessionID,
-            String tokenID,
-            String[] roles
-    ) {
+    public TokenClaims(String subjectID,
+                       String sessionID,
+                       String tokenID,
+                       String[] roles) {
         this.subjectID = subjectID;
         this.sessionID = sessionID;
         this.tokenID = tokenID;

@@ -24,29 +24,28 @@ import static io.jsonwebtoken.io.Decoders.BASE64;
 
 @Service
 public class TokenServiceImpl implements TokenService {
-    private final String    accessTokenIssuer;
-    private final String    accessTokenSecretKey;
-    private final long      accessTokenExpirationMs;
-    private final String    refreshTokenSecretKey;
-    private final long      refreshTokenExpirationMs;
-    private final String    refreshTokenIssuer;
+    private final String accessTokenIssuer;
+    private final String accessTokenSecretKey;
+    private final long accessTokenExpirationMs;
+    private final String refreshTokenSecretKey;
+    private final long refreshTokenExpirationMs;
+    private final String refreshTokenIssuer;
     private final JwtParser accessTokenParser;
     private final JwtParser apiTokenParser;
     private final JwtParser refreshTokenParser;
 
     public TokenServiceImpl(
-            @Value("${rednet.app.security.access-token.issuer}") String                 accessTokenIssuer,
-            @Value("${rednet.app.security.access-token.secret-key}") String             accessTokenSecretKey,
-            @Value("${rednet.app.security.access-token.expiration-ms}") long            accessTokenExpirationMs,
-            @Value("${rednet.app.security.access-token.allowed-clock-skew-s}") long     accessTokenAllowedClockSkewS,
-            @Value("${rednet.app.security.refresh-token.issuer}") String                refreshTokenIssuer,
-            @Value("${rednet.app.security.refresh-token.secret-key}") String            refreshTokenSecretKey,
-            @Value("${rednet.app.security.refresh-token.expiration-ms}") long           refreshTokenExpirationMs,
-            @Value("${rednet.app.security.refresh-token.allowed-clock-skew-s}") long    refreshTokenAllowedClockSkewS,
-            @Value("${rednet.app.security.api-token.secret-key}") String                apiTokenSecretKey,
-            @Value("${rednet.app.security.api-token.issuer}") String                    apiTokenIssuer,
-            @Value("${rednet.app.security.api-token.allowed-clock-skew-s}") long        apiTokenAllowedClockSkewS
-    ) {
+            @Value("${rednet.app.security.access-token.issuer}") String accessTokenIssuer,
+            @Value("${rednet.app.security.access-token.secret-key}") String accessTokenSecretKey,
+            @Value("${rednet.app.security.access-token.expiration-ms}") long accessTokenExpirationMs,
+            @Value("${rednet.app.security.access-token.allowed-clock-skew-s}") long accessTokenAllowedClockSkewS,
+            @Value("${rednet.app.security.refresh-token.issuer}") String refreshTokenIssuer,
+            @Value("${rednet.app.security.refresh-token.secret-key}") String refreshTokenSecretKey,
+            @Value("${rednet.app.security.refresh-token.expiration-ms}") long refreshTokenExpirationMs,
+            @Value("${rednet.app.security.refresh-token.allowed-clock-skew-s}") long refreshTokenAllowedClockSkewS,
+            @Value("${rednet.app.security.api-token.secret-key}") String apiTokenSecretKey,
+            @Value("${rednet.app.security.api-token.issuer}") String apiTokenIssuer,
+            @Value("${rednet.app.security.api-token.allowed-clock-skew-s}") long apiTokenAllowedClockSkewS) {
         this.accessTokenIssuer = accessTokenIssuer;
         this.accessTokenSecretKey = accessTokenSecretKey;
         this.accessTokenExpirationMs = accessTokenExpirationMs;
@@ -61,7 +60,7 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public String generateAccessToken(TokenClaims claims) {
-        return  generateToken(claims, accessTokenSecretKey, accessTokenExpirationMs, accessTokenIssuer);
+        return generateToken(claims, accessTokenSecretKey, accessTokenExpirationMs, accessTokenIssuer);
     }
 
     @Override
@@ -86,28 +85,45 @@ public class TokenServiceImpl implements TokenService {
 
     private TokenClaims parseWith(JwtParser parser, String token) {
         try {
-            Claims  claimsMap = parser.parseClaimsJws(token).getBody();
-            List<?> convertedRoles = claimsMap.get("roles", ArrayList.class);
+            Claims claimsMap = extractClaimsMapWith(parser, token);
+            String subjectID = extractSubjectIDFrom(claimsMap);
+            String sessionID = extractSessionIDFrom(claimsMap);
+            String tokenID = extractTokenIDFrom(claimsMap);
+            String[] roles = extractRolesFrom(claimsMap);
 
-            return new TokenClaims(
-                    claimsMap.getSubject(),
-                    claimsMap.get("sid", String.class),
-                    claimsMap.getId(),
-                    convertedRoles
-                            .stream()
-                            .map(obj -> (String) obj)
-                            .toArray(String[]::new)
-            );
-        } catch (
-                SignatureException |
-                MalformedJwtException |
-                ExpiredJwtException |
-                UnsupportedJwtException |
-                IllegalArgumentException |
-                ClassCastException e
-        ) {
+            return new TokenClaims(subjectID, sessionID, tokenID, roles);
+        } catch (SignatureException |
+                 MalformedJwtException |
+                 ExpiredJwtException |
+                 UnsupportedJwtException |
+                 IllegalArgumentException |
+                 ClassCastException exception) {
             throw new InvalidTokenException(token);
         }
+    }
+
+    private Claims extractClaimsMapWith(JwtParser parser, String token) {
+        return parser.parseClaimsJws(token).getBody();
+    }
+
+    private String extractSubjectIDFrom(Claims claimsMap) {
+        return claimsMap.getSubject();
+    }
+
+    private String extractSessionIDFrom(Claims claimsMap) {
+        return claimsMap.get("sid", String.class);
+    }
+
+    private String extractTokenIDFrom(Claims claimsMap) {
+        return claimsMap.getId();
+    }
+
+    private String[] extractRolesFrom(Claims claimsMap) {
+        List<?> convertedRoles = claimsMap.get("roles", ArrayList.class);
+
+        return convertedRoles.stream()
+                .map(obj -> (String) obj)
+                .toArray(String[]::new);
     }
 
     private String generateToken(TokenClaims claims, String secretKey, long expirationMs, String issuer) {

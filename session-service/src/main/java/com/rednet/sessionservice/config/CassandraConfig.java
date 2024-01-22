@@ -13,15 +13,13 @@ import java.util.List;
 
 @Configuration
 public class CassandraConfig extends AbstractCassandraConfiguration {
-    private final String        contactPoints;
-    private final String        keyspace;
-    private final SchemaAction  schemaAction;
+    private final String contactPoints;
+    private final String keyspace;
+    private final SchemaAction schemaAction;
 
-    public CassandraConfig(
-        @Value("${spring.cassandra.contact-points}") String         contactPoints,
-        @Value("${spring.cassandra.keyspace-name}") String          keyspace,
-        @Value("${spring.cassandra.schema-action}") SchemaAction    schemaAction
-    ) {
+    public CassandraConfig(@Value("${spring.cassandra.contact-points}") String contactPoints,
+                           @Value("${spring.cassandra.keyspace-name}") String keyspace,
+                           @Value("${spring.cassandra.schema-action}") SchemaAction schemaAction) {
         this.contactPoints = contactPoints;
         this.keyspace = keyspace;
         this.schemaAction = schemaAction;

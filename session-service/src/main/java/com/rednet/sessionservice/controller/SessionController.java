@@ -23,7 +23,8 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @Validated
-@RequestMapping(path = "/sessions", produces = APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/sessions",
+                produces = APPLICATION_JSON_VALUE)
 public class SessionController {
     private final SessionService sessionService;
 
@@ -38,15 +39,17 @@ public class SessionController {
 
     @GetMapping(path = "/by-id", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<Session> getSession(
-        @RequestParam("id") @Length(min = 1, message = "SessionID min length is 1") String sessionID
-    ) {
+            @RequestParam("id")
+            @Length(min = 1, message = "SessionID min length is 1")
+            String sessionID) {
         return ResponseEntity.ok(sessionService.getSession(sessionID));
     }
 
-    @GetMapping(value = "/by-user-id", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/by-user-id", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<List<Session>> getSessionsByUserID(
-        @RequestParam("user-id") @Length(min = 1, message = "UserID min length is 1") String userID
-    ) {
+            @RequestParam("user-id")
+            @Length(min = 1, message = "UserID min length is 1")
+            String userID) {
         return ResponseEntity.ok(sessionService.getSessionsByUserID(userID));
     }
 
@@ -57,8 +60,9 @@ public class SessionController {
 
     @DeleteMapping("/by-user-id")
     public ResponseEntity<Void> deleteSessionsByUserID(
-        @RequestParam("user-id") @Length(min = 1, message = "UserID min length is 1") String userID
-    ) {
+            @RequestParam("user-id")
+            @Length(min = 1, message = "UserID min length is 1")
+            String userID) {
         sessionService.deleteSessionsByUserID(userID);
         return ResponseEntity.ok().build();
     }

@@ -31,7 +31,7 @@ public class Session implements Serializable {
     private Instant createdAt;
 
     @Column
-    @CassandraType(typeArguments = TEXT , type = LIST)
+    @CassandraType(typeArguments = TEXT, type = LIST)
     private String[] roles;
 
     @Column("access_token")
@@ -48,13 +48,13 @@ public class Session implements Serializable {
     }
 
     public Session(
-        String      userID,
-        String      sessionKey,
-        Instant     createdAt,
-        String[]    roles,
-        String      accessToken,
-        String      refreshToken,
-        String      tokenID
+        String userID,
+        String sessionKey,
+        Instant createdAt,
+        String[] roles,
+        String accessToken,
+        String refreshToken,
+        String tokenID
     ) {
         this.userID = userID;
         this.sessionKey = sessionKey;

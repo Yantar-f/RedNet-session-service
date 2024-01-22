@@ -19,15 +19,13 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    private final ApiTokenFilter            apiTokenFilter;
-    private final AccessDeniedHandler       accessDeniedHandler;
-    private final AuthenticationEntryPoint  authenticationEntryPoint;
+    private final ApiTokenFilter apiTokenFilter;
+    private final AccessDeniedHandler accessDeniedHandler;
+    private final AuthenticationEntryPoint authenticationEntryPoint;
 
-    public SecurityConfig(
-        ApiTokenFilter              apiTokenFilter,
-        AccessDeniedHandler         accessDeniedHandler,
-        AuthenticationEntryPoint    authenticationEntryPoint
-    ) {
+    public SecurityConfig(ApiTokenFilter apiTokenFilter,
+                          AccessDeniedHandler accessDeniedHandler,
+                          AuthenticationEntryPoint authenticationEntryPoint) {
         this.apiTokenFilter = apiTokenFilter;
         this.accessDeniedHandler = accessDeniedHandler;
         this.authenticationEntryPoint = authenticationEntryPoint;

@@ -17,16 +17,14 @@ import java.util.List;
 @Service
 public class SessionServiceImpl implements SessionService {
     private final SessionRepository sessionRepository;
-    private final TokenIDGenerator  tokenIDGenerator;
-    private final TokenService      tokenService;
-    private final SessionIDShaper   sessionIDShaper;
+    private final TokenIDGenerator tokenIDGenerator;
+    private final TokenService tokenService;
+    private final SessionIDShaper sessionIDShaper;
 
-    public SessionServiceImpl(
-            SessionRepository   sessionRepository,
-            TokenIDGenerator    tokenIDGenerator,
-            TokenService        tokenService,
-            SessionIDShaper     sessionIDShaper
-    ) {
+    public SessionServiceImpl(SessionRepository sessionRepository,
+                              TokenIDGenerator tokenIDGenerator,
+                              TokenService tokenService,
+                              SessionIDShaper sessionIDShaper) {
         this.sessionRepository = sessionRepository;
         this.tokenIDGenerator = tokenIDGenerator;
         this.tokenService = tokenService;
@@ -35,17 +33,20 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public Session createSession(String userID, String[] roles) {
-        SessionID   sessionID = sessionIDShaper.generate(userID);
-        String      tokenID = tokenIDGenerator.generate();
-        TokenClaims claims = new TokenClaims(userID, sessionIDShaper.convert(sessionID), tokenID, roles);
+        SessionID sessionID = sessionIDShaper.generate(userID);
+        String tokenID = tokenIDGenerator.generate();
+        String convertedSessionID = sessionIDShaper.convert(sessionID);
+        TokenClaims claims = new TokenClaims(userID, convertedSessionID, tokenID, roles);
+        String accessToken = tokenService.generateAccessToken(claims);
+        String refreshToken = tokenService.generateRefreshToken(claims);
 
         return sessionRepository.insert(new Session(
                 userID,
                 sessionID.getSessionKey(),
                 Instant.now(),
                 roles,
-                tokenService.generateAccessToken(claims),
-                tokenService.generateRefreshToken(claims),
+                accessToken,
+                refreshToken,
                 tokenID
         ));
     }

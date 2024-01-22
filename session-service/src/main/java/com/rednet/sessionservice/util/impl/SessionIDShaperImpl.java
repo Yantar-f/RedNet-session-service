@@ -10,9 +10,11 @@ import org.springframework.stereotype.Component;
 public class SessionIDShaperImpl implements SessionIDShaper {
     private final char separator = '.';
     private final SessionKeyGenerator sessionKeyGenerator;
+    private final int minSessionIDLength;
 
     public SessionIDShaperImpl(SessionKeyGenerator sessionKeyGenerator) {
         this.sessionKeyGenerator = sessionKeyGenerator;
+        minSessionIDLength = sessionKeyGenerator.getKeyLength() + 2;
     }
 
     @Override
@@ -22,7 +24,28 @@ public class SessionIDShaperImpl implements SessionIDShaper {
 
     @Override
     public SessionID parse(String sessionID) {
-        if (sessionID.length() < sessionKeyGenerator.getKeyLength() + 2)
+        int separatorIndex = computeSeparatorIndex(sessionID);
+        String userID = extractUserID(sessionID, separatorIndex);
+        String sessionKey = extractSessionKey(sessionID, separatorIndex);
+
+        return new SessionID(userID, sessionKey);
+    }
+
+    private String extractSessionKey(String sessionID, int separatorIndex) {
+        return sessionID.substring(separatorIndex + 1);
+    }
+
+    private String extractUserID(String sessionID, int separatorIndex) {
+        return sessionID.substring(0,separatorIndex);
+    }
+
+    @Override
+    public String convert(SessionID sessionID) {
+        return sessionID.getUserID() + separator + sessionID.getSessionKey();
+    }
+
+    private int computeSeparatorIndex(String sessionID) {
+        if (sessionID.length() < minSessionIDLength)
             throw new InvalidSessionIDException(sessionID);
 
         int separatorIndex = sessionID.length() - 1 - sessionKeyGenerator.getKeyLength();
@@ -30,14 +53,6 @@ public class SessionIDShaperImpl implements SessionIDShaper {
         if (sessionID.charAt(separatorIndex) != separator)
             throw new InvalidSessionIDException(sessionID);
 
-        return new SessionID(
-                sessionID.substring(0,separatorIndex),
-                sessionID.substring(separatorIndex + 1)
-        );
-    }
-
-    @Override
-    public String convert(SessionID sessionID) {
-        return sessionID.getUserID() + separator + sessionID.getSessionKey();
+        return separatorIndex;
     }
 }
