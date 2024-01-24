@@ -1,12 +1,9 @@
 package com.rednet.sessionservice.filter;
 
+import com.rednet.sessionservice.config.ApiTokenConfig;
 import com.rednet.sessionservice.exception.impl.InvalidTokenException;
 import com.rednet.sessionservice.model.TokenClaims;
-import com.rednet.sessionservice.service.TokenService;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.security.SignatureException;
+import com.rednet.sessionservice.util.TokenUtil;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -29,13 +26,12 @@ import java.util.Optional;
 
 @Component
 public class ApiTokenFilter extends OncePerRequestFilter {
-    private final String apiTokenCookieName;
-    private final TokenService tokenService;
+    private final ApiTokenConfig apiTokenConfig;
+    private final TokenUtil tokenUtil;
 
-    public ApiTokenFilter(@Value("${rednet.app.security.api-token.cookie-name}") String apiTokenCookieName,
-                          TokenService tokenService) {
-        this.apiTokenCookieName = apiTokenCookieName;
-        this.tokenService = tokenService;
+    public ApiTokenFilter(ApiTokenConfig apiTokenConfig, TokenUtil tokenUtil) {
+        this.apiTokenConfig = apiTokenConfig;
+        this.tokenUtil = tokenUtil;
     }
 
     @Override
@@ -50,7 +46,7 @@ public class ApiTokenFilter extends OncePerRequestFilter {
         }
 
         try {
-            TokenClaims claims = tokenService.parseApiToken(apiToken.get());
+            TokenClaims claims = tokenUtil.parseApiToken(apiToken.get());
             List<SimpleGrantedAuthority> authorities = convertRolesToAuthorities(claims.getRoles());
 
             UsernamePasswordAuthenticationToken contextAuthToken = new UsernamePasswordAuthenticationToken(
@@ -72,7 +68,7 @@ public class ApiTokenFilter extends OncePerRequestFilter {
     }
 
     private Optional<String> extractApiTokenFromRequest(HttpServletRequest request) {
-        Optional<Cookie> cookie = Optional.ofNullable(WebUtils.getCookie(request, apiTokenCookieName));
+        Optional<Cookie> cookie = Optional.ofNullable(WebUtils.getCookie(request, apiTokenConfig.getCookieName()));
         return cookie.map(Cookie::getValue);
     }
 

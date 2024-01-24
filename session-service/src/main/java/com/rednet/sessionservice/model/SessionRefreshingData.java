@@ -1,8 +1,8 @@
-package com.rednet.sessionservice.payload.request;
+package com.rednet.sessionservice.model;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record RefreshSessionRequestBody(
+public record SessionRefreshingData(
         @NotBlank(message = "Token should be not blank")
         String refreshToken
 ) {}

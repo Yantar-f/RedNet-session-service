@@ -1,14 +1,19 @@
 package com.rednet.sessionservice.service.impl;
 
 import com.rednet.sessionservice.entity.Session;
-import com.rednet.sessionservice.exception.impl.*;
+import com.rednet.sessionservice.exception.impl.InvalidSessionIDException;
+import com.rednet.sessionservice.exception.impl.InvalidTokenException;
+import com.rednet.sessionservice.exception.impl.SessionNotFoundException;
+import com.rednet.sessionservice.exception.impl.SessionRemovingException;
+import com.rednet.sessionservice.exception.impl.UserSessionsNotFoundException;
+import com.rednet.sessionservice.exception.impl.UserSessionsRemovingException;
 import com.rednet.sessionservice.model.SessionID;
 import com.rednet.sessionservice.model.TokenClaims;
 import com.rednet.sessionservice.repository.SessionRepository;
 import com.rednet.sessionservice.service.SessionService;
-import com.rednet.sessionservice.service.TokenService;
 import com.rednet.sessionservice.util.SessionIDShaper;
 import com.rednet.sessionservice.util.TokenIDGenerator;
+import com.rednet.sessionservice.util.TokenUtil;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -18,16 +23,16 @@ import java.util.List;
 public class SessionServiceImpl implements SessionService {
     private final SessionRepository sessionRepository;
     private final TokenIDGenerator tokenIDGenerator;
-    private final TokenService tokenService;
+    private final TokenUtil tokenUtil;
     private final SessionIDShaper sessionIDShaper;
 
     public SessionServiceImpl(SessionRepository sessionRepository,
                               TokenIDGenerator tokenIDGenerator,
-                              TokenService tokenService,
+                              TokenUtil tokenUtil,
                               SessionIDShaper sessionIDShaper) {
         this.sessionRepository = sessionRepository;
         this.tokenIDGenerator = tokenIDGenerator;
-        this.tokenService = tokenService;
+        this.tokenUtil = tokenUtil;
         this.sessionIDShaper = sessionIDShaper;
     }
 
@@ -37,8 +42,8 @@ public class SessionServiceImpl implements SessionService {
         String tokenID = tokenIDGenerator.generate();
         String convertedSessionID = sessionIDShaper.convert(sessionID);
         TokenClaims claims = new TokenClaims(userID, convertedSessionID, tokenID, roles);
-        String accessToken = tokenService.generateAccessToken(claims);
-        String refreshToken = tokenService.generateRefreshToken(claims);
+        String accessToken = tokenUtil.generateAccessToken(claims);
+        String refreshToken = tokenUtil.generateRefreshToken(claims);
 
         return sessionRepository.insert(new Session(
                 userID,
@@ -77,7 +82,7 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public Session refreshSession(String refreshToken) {
         try {
-            TokenClaims claims = tokenService.parseRefreshToken(refreshToken);
+            TokenClaims claims = tokenUtil.parseRefreshToken(refreshToken);
             SessionID sessionID = sessionIDShaper.parse(claims.getSessionID());
 
             Session session = sessionRepository
@@ -89,8 +94,8 @@ public class SessionServiceImpl implements SessionService {
 
             claims.setTokenID(tokenIDGenerator.generate());
 
-            session.setAccessToken(tokenService.generateAccessToken(claims));
-            session.setRefreshToken(tokenService.generateRefreshToken(claims));
+            session.setAccessToken(tokenUtil.generateAccessToken(claims));
+            session.setRefreshToken(tokenUtil.generateRefreshToken(claims));
             session.setTokenID(claims.getTokenID());
             session.setCreatedAt(Instant.now());
 
@@ -103,7 +108,7 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public void deleteSession(String refreshToken) {
         try {
-            TokenClaims claims = tokenService.parseRefreshToken(refreshToken);
+            TokenClaims claims = tokenUtil.parseRefreshToken(refreshToken);
             SessionID sessionID = sessionIDShaper.parse(claims.getSessionID());
 
             Session session = sessionRepository

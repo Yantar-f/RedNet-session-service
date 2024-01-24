@@ -31,6 +31,18 @@ public class SessionIDShaperImpl implements SessionIDShaper {
         return new SessionID(userID, sessionKey);
     }
 
+    private int computeSeparatorIndex(String sessionID) {
+        if (sessionID.length() < minSessionIDLength)
+            throw new InvalidSessionIDException(sessionID);
+
+        int separatorIndex = sessionID.length() - 1 - sessionKeyGenerator.getKeyLength();
+
+        if (sessionID.charAt(separatorIndex) != separator)
+            throw new InvalidSessionIDException(sessionID);
+
+        return separatorIndex;
+    }
+
     private String extractSessionKey(String sessionID, int separatorIndex) {
         return sessionID.substring(separatorIndex + 1);
     }
@@ -42,17 +54,5 @@ public class SessionIDShaperImpl implements SessionIDShaper {
     @Override
     public String convert(SessionID sessionID) {
         return sessionID.getUserID() + separator + sessionID.getSessionKey();
-    }
-
-    private int computeSeparatorIndex(String sessionID) {
-        if (sessionID.length() < minSessionIDLength)
-            throw new InvalidSessionIDException(sessionID);
-
-        int separatorIndex = sessionID.length() - 1 - sessionKeyGenerator.getKeyLength();
-
-        if (sessionID.charAt(separatorIndex) != separator)
-            throw new InvalidSessionIDException(sessionID);
-
-        return separatorIndex;
     }
 }

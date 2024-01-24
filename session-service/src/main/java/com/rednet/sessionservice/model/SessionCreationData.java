@@ -1,9 +1,9 @@
-package com.rednet.sessionservice.payload.request;
+package com.rednet.sessionservice.model;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record CreateSessionRequestBody(
+public record SessionCreationData(
     @NotBlank(message = "UserID should be not blank")
     String userID,
 

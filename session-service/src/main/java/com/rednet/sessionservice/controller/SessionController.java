@@ -1,8 +1,8 @@
 package com.rednet.sessionservice.controller;
 
 import com.rednet.sessionservice.entity.Session;
-import com.rednet.sessionservice.payload.request.CreateSessionRequestBody;
-import com.rednet.sessionservice.payload.request.RefreshSessionRequestBody;
+import com.rednet.sessionservice.model.SessionCreationData;
+import com.rednet.sessionservice.model.SessionRefreshingData;
 import com.rednet.sessionservice.service.SessionService;
 import jakarta.validation.Valid;
 import org.hibernate.validator.constraints.Length;
@@ -23,8 +23,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @Validated
-@RequestMapping(path = "/sessions",
-                produces = APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/sessions", produces = APPLICATION_JSON_VALUE)
 public class SessionController {
     private final SessionService sessionService;
 
@@ -33,7 +32,7 @@ public class SessionController {
     }
 
     @PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity<Session> createSession(@Valid @RequestBody CreateSessionRequestBody requestBody) {
+    public ResponseEntity<Session> createSession(@Valid @RequestBody SessionCreationData requestBody) {
         return ResponseEntity.ok(sessionService.createSession(requestBody.userID(),requestBody.roles()));
     }
 
@@ -54,7 +53,7 @@ public class SessionController {
     }
 
     @PutMapping(produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity<Session> refreshSession(@Valid @RequestBody RefreshSessionRequestBody requestBody) {
+    public ResponseEntity<Session> refreshSession(@Valid @RequestBody SessionRefreshingData requestBody) {
         return ResponseEntity.ok(sessionService.refreshSession(requestBody.refreshToken()));
     }
 
@@ -68,7 +67,7 @@ public class SessionController {
     }
 
     @PostMapping(path = "/session-removing-process", consumes = APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> deleteSession(@Valid @RequestBody RefreshSessionRequestBody requestBody) {
+    public ResponseEntity<Void> deleteSession(@Valid @RequestBody SessionRefreshingData requestBody) {
         sessionService.deleteSession(requestBody.refreshToken());
         return ResponseEntity.ok().build();
     }

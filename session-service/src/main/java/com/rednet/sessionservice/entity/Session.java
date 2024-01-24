@@ -47,15 +47,13 @@ public class Session implements Serializable {
 
     }
 
-    public Session(
-        String userID,
-        String sessionKey,
-        Instant createdAt,
-        String[] roles,
-        String accessToken,
-        String refreshToken,
-        String tokenID
-    ) {
+    public Session(String userID,
+                   String sessionKey,
+                   Instant createdAt,
+                   String[] roles,
+                   String accessToken,
+                   String refreshToken,
+                   String tokenID) {
         this.userID = userID;
         this.sessionKey = sessionKey;
         this.createdAt = createdAt;
@@ -63,7 +61,6 @@ public class Session implements Serializable {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.tokenID = tokenID;
-
     }
 
     public String getUserID() {

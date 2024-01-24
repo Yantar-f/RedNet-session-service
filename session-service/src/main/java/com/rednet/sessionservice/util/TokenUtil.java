@@ -1,8 +1,8 @@
-package com.rednet.sessionservice.service;
+package com.rednet.sessionservice.util;
 
 import com.rednet.sessionservice.model.TokenClaims;
 
-public interface TokenService {
+public interface TokenUtil {
     String      generateAccessToken     (TokenClaims tokenClaims);
     String      generateRefreshToken    (TokenClaims tokenClaims);
 

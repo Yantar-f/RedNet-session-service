@@ -1,9 +1,9 @@
 package com.rednet.sessionservice.repository.impl;
 
+import com.rednet.sessionservice.config.RefreshTokenConfig;
 import com.rednet.sessionservice.entity.Session;
 import com.rednet.sessionservice.model.SessionID;
 import com.rednet.sessionservice.repository.SessionRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.cassandra.core.CassandraOperations;
 import org.springframework.data.cassandra.core.InsertOptions;
 import org.springframework.stereotype.Repository;
@@ -20,14 +20,11 @@ public class SessionRepositoryImpl implements SessionRepository {
     private final CassandraOperations operations;
     private final InsertOptions insertOptions;
 
-    public SessionRepositoryImpl(
-        CassandraOperations operations,
-        @Value("${rednet.app.security.refresh-token.expiration-ms}") long refreshTokenExpirationMs
-    ) {
+    public SessionRepositoryImpl(CassandraOperations operations, RefreshTokenConfig refreshTokenConfig) {
         this.operations = operations;
 
         this.insertOptions = InsertOptions.builder()
-            .ttl((int) MILLISECONDS.toSeconds(refreshTokenExpirationMs) + 10)
+            .ttl((int) MILLISECONDS.toSeconds(refreshTokenConfig.getExpirationMs()) + 10)
             .build();
     }
 
