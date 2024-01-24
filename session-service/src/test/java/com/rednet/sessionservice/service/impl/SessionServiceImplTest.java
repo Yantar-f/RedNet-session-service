@@ -1,14 +1,19 @@
 package com.rednet.sessionservice.service.impl;
 
 import com.rednet.sessionservice.entity.Session;
-import com.rednet.sessionservice.exception.impl.*;
+import com.rednet.sessionservice.exception.impl.InvalidSessionIDException;
+import com.rednet.sessionservice.exception.impl.InvalidTokenException;
+import com.rednet.sessionservice.exception.impl.SessionNotFoundException;
+import com.rednet.sessionservice.exception.impl.SessionRemovingException;
+import com.rednet.sessionservice.exception.impl.UserSessionsNotFoundException;
+import com.rednet.sessionservice.exception.impl.UserSessionsRemovingException;
 import com.rednet.sessionservice.model.SessionID;
 import com.rednet.sessionservice.model.TokenClaims;
 import com.rednet.sessionservice.repository.SessionRepository;
 import com.rednet.sessionservice.service.SessionService;
-import com.rednet.sessionservice.util.TokenUtil;
 import com.rednet.sessionservice.util.SessionIDShaper;
 import com.rednet.sessionservice.util.TokenIDGenerator;
+import com.rednet.sessionservice.util.TokenUtil;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -19,12 +24,17 @@ import java.util.Optional;
 
 import static org.instancio.Instancio.create;
 import static org.instancio.Instancio.ofList;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class SessionServiceImplTest {
     private final SessionRepository     sessionRepository = mock(SessionRepository.class);
