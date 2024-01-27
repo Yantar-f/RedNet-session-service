@@ -23,17 +23,17 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @Validated
-@RequestMapping(path = "/sessions", produces = APPLICATION_JSON_VALUE)
+@RequestMapping("/sessions")
 public class SessionController {
-    private final SessionService sessionService;
+    private SessionService sessionService;
 
     public SessionController(SessionService sessionService) {
         this.sessionService = sessionService;
     }
 
     @PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity<Session> createSession(@Valid @RequestBody SessionCreationData requestBody) {
-        return ResponseEntity.ok(sessionService.createSession(requestBody.userID(),requestBody.roles()));
+    public ResponseEntity<Session> createSession(@Valid @RequestBody SessionCreationData creationData) {
+        return ResponseEntity.ok(sessionService.createSession(creationData));
     }
 
     @GetMapping(path = "/by-id", produces = APPLICATION_JSON_VALUE)
@@ -41,6 +41,7 @@ public class SessionController {
             @RequestParam("id")
             @Length(min = 1, message = "SessionID min length is 1")
             String sessionID) {
+
         return ResponseEntity.ok(sessionService.getSession(sessionID));
     }
 
@@ -49,6 +50,7 @@ public class SessionController {
             @RequestParam("user-id")
             @Length(min = 1, message = "UserID min length is 1")
             String userID) {
+
         return ResponseEntity.ok(sessionService.getSessionsByUserID(userID));
     }
 
@@ -62,6 +64,7 @@ public class SessionController {
             @RequestParam("user-id")
             @Length(min = 1, message = "UserID min length is 1")
             String userID) {
+
         sessionService.deleteSessionsByUserID(userID);
         return ResponseEntity.ok().build();
     }

@@ -7,6 +7,7 @@ import com.rednet.sessionservice.exception.impl.SessionNotFoundException;
 import com.rednet.sessionservice.exception.impl.SessionRemovingException;
 import com.rednet.sessionservice.exception.impl.UserSessionsNotFoundException;
 import com.rednet.sessionservice.exception.impl.UserSessionsRemovingException;
+import com.rednet.sessionservice.model.SessionCreationData;
 import com.rednet.sessionservice.model.SessionID;
 import com.rednet.sessionservice.model.TokenClaims;
 import com.rednet.sessionservice.repository.SessionRepository;
@@ -37,19 +38,19 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    public Session createSession(String userID, String[] roles) {
-        SessionID sessionID = sessionIDShaper.generate(userID);
+    public Session createSession(SessionCreationData creationData) {
+        SessionID sessionID = sessionIDShaper.generate(creationData.userID());
         String tokenID = tokenIDGenerator.generate();
         String convertedSessionID = sessionIDShaper.convert(sessionID);
-        TokenClaims claims = new TokenClaims(userID, convertedSessionID, tokenID, roles);
+        TokenClaims claims = new TokenClaims(creationData.userID(), convertedSessionID, tokenID, creationData.roles());
         String accessToken = tokenUtil.generateAccessToken(claims);
         String refreshToken = tokenUtil.generateRefreshToken(claims);
 
         return sessionRepository.insert(new Session(
-                userID,
+                creationData.userID(),
                 sessionID.getSessionKey(),
                 Instant.now(),
-                roles,
+                creationData.roles(),
                 accessToken,
                 refreshToken,
                 tokenID
@@ -115,7 +116,7 @@ public class SessionServiceImpl implements SessionService {
                     .findByID(sessionID)
                     .orElseThrow(() -> new InvalidTokenException(refreshToken));
 
-            if ( ! session.getTokenID().equals(claims.getTokenID()))
+            if (! session.getTokenID().equals(claims.getTokenID()))
                 throw new InvalidTokenException(refreshToken);
 
             if (! sessionRepository.deleteByID(sessionID))
@@ -128,7 +129,7 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public void deleteSessionsByUserID(String userID) {
         if (sessionRepository.existsByUserID(userID)) {
-            if ( ! sessionRepository.deleteAllByUserID(userID))
+            if (! sessionRepository.deleteAllByUserID(userID))
                 throw new UserSessionsRemovingException(userID);
         } else {
             throw new UserSessionsNotFoundException(userID);

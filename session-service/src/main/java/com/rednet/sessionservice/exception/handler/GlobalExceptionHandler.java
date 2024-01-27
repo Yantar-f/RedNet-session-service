@@ -8,11 +8,13 @@ import com.rednet.sessionservice.exception.impl.UserSessionsRemovingException;
 import com.rednet.sessionservice.exception.ErrorResponseMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.ws.rs.ServerErrorException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
@@ -39,6 +41,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -169,17 +172,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return generateErrorResponse(INTERNAL_SERVER_ERROR, request.getServletPath(), ex.getMessage());
     }
 
+    @ExceptionHandler(value = ServerErrorException.class)
+    protected ResponseEntity<Object> handleServerError(RuntimeException ex,
+                                                       HttpServletRequest request) {
+        return generateErrorResponse(INTERNAL_SERVER_ERROR, request.getServletPath(), ex.getMessage());
+    }
+
     private ResponseEntity<Object> generateErrorResponse(HttpStatus httpStatus,
                                                          String path,
                                                          String errorMessage) {
-        return ResponseEntity.status(httpStatus.value()).body(
-            new ErrorResponseMessage(
-                httpStatus.name(),
-                Instant.now(),
-                path,
-                errorMessage
-            )
-        );
+        return ResponseEntity
+                .status(httpStatus.value())
+                .contentType(APPLICATION_JSON)
+                .body(new ErrorResponseMessage(httpStatus.name(), Instant.now(), path, errorMessage));
     }
 
     private String extractPath(WebRequest request) {

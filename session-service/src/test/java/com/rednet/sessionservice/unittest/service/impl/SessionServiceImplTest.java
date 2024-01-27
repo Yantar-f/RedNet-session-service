@@ -1,4 +1,4 @@
-package com.rednet.sessionservice.service.impl;
+package com.rednet.sessionservice.unittest.service.impl;
 
 import com.rednet.sessionservice.entity.Session;
 import com.rednet.sessionservice.exception.impl.InvalidSessionIDException;
@@ -7,10 +7,12 @@ import com.rednet.sessionservice.exception.impl.SessionNotFoundException;
 import com.rednet.sessionservice.exception.impl.SessionRemovingException;
 import com.rednet.sessionservice.exception.impl.UserSessionsNotFoundException;
 import com.rednet.sessionservice.exception.impl.UserSessionsRemovingException;
+import com.rednet.sessionservice.model.SessionCreationData;
 import com.rednet.sessionservice.model.SessionID;
 import com.rednet.sessionservice.model.TokenClaims;
 import com.rednet.sessionservice.repository.SessionRepository;
 import com.rednet.sessionservice.service.SessionService;
+import com.rednet.sessionservice.service.impl.SessionServiceImpl;
 import com.rednet.sessionservice.util.SessionIDShaper;
 import com.rednet.sessionservice.util.TokenIDGenerator;
 import com.rednet.sessionservice.util.TokenUtil;
@@ -37,10 +39,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class SessionServiceImplTest {
-    private final SessionRepository     sessionRepository = mock(SessionRepository.class);
-    private final TokenIDGenerator      tokenIDGenerator = mock(TokenIDGenerator.class);
+    private final SessionRepository sessionRepository = mock(SessionRepository.class);
+    private final TokenIDGenerator tokenIDGenerator = mock(TokenIDGenerator.class);
     private final TokenUtil tokenUtil = mock(TokenUtil.class);
-    private final SessionIDShaper       sessionIDShaper = mock(SessionIDShaper.class);
+    private final SessionIDShaper sessionIDShaper = mock(SessionIDShaper.class);
 
     private final SessionService sut = new SessionServiceImpl(
             sessionRepository,
@@ -60,6 +62,7 @@ class SessionServiceImplTest {
         Instant     expectedCreatedAtAfter = Instant.now();
         String[]    expectedRoles = create(String[].class);
         SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
+        SessionCreationData expectedCreationData = new SessionCreationData(expectedUserID, expectedRoles);
 
         Session expectedSession = new Session(
                 expectedUserID,
@@ -89,7 +92,7 @@ class SessionServiceImplTest {
         when(sessionRepository.insert(any()))
                 .thenReturn(expectedSession);
 
-        Session actualSession = sut.createSession(expectedUserID, expectedRoles);
+        Session actualSession = sut.createSession(expectedCreationData);
 
         assertEquals(expectedSession, actualSession);
 
