@@ -236,7 +236,7 @@ class SessionControllerTest {
     }
 
     @Test
-    void Getting_session_with_blank_user_id_is_not_successful() throws Exception {
+    public void Getting_session_with_blank_user_id_is_not_successful() throws Exception {
         mvc.perform(get("/sessions/by-user-id")
                         .param("user-id", ""))
                 .andExpect(status().isBadRequest())
@@ -244,7 +244,7 @@ class SessionControllerTest {
     }
 
     @Test
-    void Getting_session_with_invalid_user_id_is_not_successful() throws Exception {
+    public void Getting_session_with_invalid_user_id_is_not_successful() throws Exception {
         String expectedUserID = Instancio.create(String.class);
 
         when(sessionService.getSessionsByUserID(eq(expectedUserID)))
