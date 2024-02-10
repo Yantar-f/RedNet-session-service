@@ -13,6 +13,7 @@ import com.rednet.sessionservice.model.TokenClaims;
 import com.rednet.sessionservice.repository.SessionRepository;
 import com.rednet.sessionservice.service.SessionService;
 import com.rednet.sessionservice.util.SessionIDShaper;
+import com.rednet.sessionservice.util.TimeManager;
 import com.rednet.sessionservice.util.TokenIDGenerator;
 import com.rednet.sessionservice.util.TokenUtil;
 import org.springframework.stereotype.Service;
@@ -26,15 +27,18 @@ public class SessionServiceImpl implements SessionService {
     private final TokenIDGenerator tokenIDGenerator;
     private final TokenUtil tokenUtil;
     private final SessionIDShaper sessionIDShaper;
+    private final TimeManager timeManager;
 
     public SessionServiceImpl(SessionRepository sessionRepository,
                               TokenIDGenerator tokenIDGenerator,
                               TokenUtil tokenUtil,
-                              SessionIDShaper sessionIDShaper) {
+                              SessionIDShaper sessionIDShaper,
+                              TimeManager timeManager) {
         this.sessionRepository = sessionRepository;
         this.tokenIDGenerator = tokenIDGenerator;
         this.tokenUtil = tokenUtil;
         this.sessionIDShaper = sessionIDShaper;
+        this.timeManager = timeManager;
     }
 
     @Override
@@ -45,11 +49,12 @@ public class SessionServiceImpl implements SessionService {
         TokenClaims claims = new TokenClaims(creationData.userID(), convertedSessionID, tokenID, creationData.roles());
         String accessToken = tokenUtil.generateAccessToken(claims);
         String refreshToken = tokenUtil.generateRefreshToken(claims);
+        Instant createdAt = timeManager.stampTime();
 
         return sessionRepository.insert(new Session(
                 creationData.userID(),
                 sessionID.getSessionKey(),
-                Instant.now(),
+                createdAt,
                 creationData.roles(),
                 accessToken,
                 refreshToken,
@@ -98,7 +103,7 @@ public class SessionServiceImpl implements SessionService {
             session.setAccessToken(tokenUtil.generateAccessToken(claims));
             session.setRefreshToken(tokenUtil.generateRefreshToken(claims));
             session.setTokenID(claims.getTokenID());
-            session.setCreatedAt(Instant.now());
+            session.setRefreshedAt(timeManager.stampTime());
 
             return sessionRepository.insert(session);
         } catch (InvalidSessionIDException e) {

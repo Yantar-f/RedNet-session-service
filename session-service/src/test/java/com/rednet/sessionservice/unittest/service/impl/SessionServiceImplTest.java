@@ -14,6 +14,7 @@ import com.rednet.sessionservice.repository.SessionRepository;
 import com.rednet.sessionservice.service.SessionService;
 import com.rednet.sessionservice.service.impl.SessionServiceImpl;
 import com.rednet.sessionservice.util.SessionIDShaper;
+import com.rednet.sessionservice.util.TimeManager;
 import com.rednet.sessionservice.util.TokenIDGenerator;
 import com.rednet.sessionservice.util.TokenUtil;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -43,31 +43,33 @@ class SessionServiceImplTest {
     private final TokenIDGenerator tokenIDGenerator = mock(TokenIDGenerator.class);
     private final TokenUtil tokenUtil = mock(TokenUtil.class);
     private final SessionIDShaper sessionIDShaper = mock(SessionIDShaper.class);
+    private final TimeManager timeManager = mock(TimeManager.class);
 
     private final SessionService sut = new SessionServiceImpl(
             sessionRepository,
             tokenIDGenerator,
             tokenUtil,
-            sessionIDShaper
+            sessionIDShaper,
+            timeManager
     );
 
     @Test
     void Creating_session_is_successful() {
-        String      expectedSessionIDStr = create(String.class);
-        String      expectedUserID = create(String.class);
-        String      expectedSessionKey = create(String.class);
-        String      expectedTokenID = create(String.class);
-        String      expectedAccessToken = create(String.class);
-        String      expectedRefreshToken = create(String.class);
-        Instant     expectedCreatedAtAfter = Instant.now();
-        String[]    expectedRoles = create(String[].class);
-        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
+        String expectedSessionIDStr = create(String.class);
+        String expectedUserID = create(String.class);
+        String expectedSessionKey = create(String.class);
+        String expectedTokenID = create(String.class);
+        String expectedAccessToken = create(String.class);
+        String expectedRefreshToken = create(String.class);
+        Instant expectedCreatedAt = Instant.now();
+        String[] expectedRoles = create(String[].class);
+        SessionID expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
         SessionCreationData expectedCreationData = new SessionCreationData(expectedUserID, expectedRoles);
 
         Session expectedSession = new Session(
                 expectedUserID,
                 expectedSessionKey,
-                expectedCreatedAtAfter,
+                expectedCreatedAt,
                 expectedRoles,
                 expectedAccessToken,
                 expectedRefreshToken,
@@ -89,6 +91,9 @@ class SessionServiceImplTest {
         when(tokenUtil.generateRefreshToken(any()))
                 .thenReturn(expectedRefreshToken);
 
+        when(timeManager.stampTime())
+                .thenReturn(expectedCreatedAt);
+
         when(sessionRepository.insert(any()))
                 .thenReturn(expectedSession);
 
@@ -97,20 +102,20 @@ class SessionServiceImplTest {
         assertEquals(expectedSession, actualSession);
 
         verify(sessionRepository)
-                .insert(argThat(session -> isSessionTheSameButCreatedAfter(expectedSession, session)));
+                .insert(eq(expectedSession));
     }
 
     @Test
     public void Getting_session_by_valid_id_is_successful() {
-        String      expectedSessionIDStr = create(String.class);
-        String      expectedUserID = create(String.class);
-        String      expectedSessionKey = create(String.class);
-        String      expectedTokenID = create(String.class);
-        String      expectedAccessToken = create(String.class);
-        String      expectedRefreshToken = create(String.class);
-        Instant     expectedCreatedAtAfter = Instant.now();
-        String[]    expectedRoles = create(String[].class);
-        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
+        String expectedSessionIDStr = create(String.class);
+        String expectedUserID = create(String.class);
+        String expectedSessionKey = create(String.class);
+        String expectedTokenID = create(String.class);
+        String expectedAccessToken = create(String.class);
+        String expectedRefreshToken = create(String.class);
+        Instant expectedCreatedAtAfter = Instant.now();
+        String[] expectedRoles = create(String[].class);
+        SessionID expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         Session expectedSession = new Session(
                 expectedUserID,
@@ -135,10 +140,10 @@ class SessionServiceImplTest {
 
     @Test
     public void Getting_session_by_not_existing_session_id_is_not_successful() {
-        String      expectedSessionIDStr = create(String.class);
-        String      expectedUserID = create(String.class);
-        String      expectedSessionKey = create(String.class);
-        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
+        String expectedSessionIDStr = create(String.class);
+        String expectedUserID = create(String.class);
+        String expectedSessionKey = create(String.class);
+        SessionID expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         when(sessionIDShaper.parse(any()))
                 .thenReturn(expectedSessionID);
@@ -187,17 +192,19 @@ class SessionServiceImplTest {
 
     @Test
     public void Refreshing_session_by_valid_token_is_successful() {
-        String      expectedSessionIDStr = create(String.class);
-        String      expectedUserID = create(String.class);
-        String      expectedSessionKey = create(String.class);
-        String      expectedTokenID = create(String.class);
-        String      expectedNewTokenID = create(String.class);
-        String      expectedAccessToken = create(String.class);
-        String      expectedNewAccessToken = create(String.class);
-        String      expectedRefreshToken = create(String.class);
-        String      expectedNewRefreshToken = create(String.class);
-        String[]    expectedRoles = create(String[].class);
-        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
+        String expectedSessionIDStr = create(String.class);
+        String expectedUserID = create(String.class);
+        String expectedSessionKey = create(String.class);
+        String expectedTokenID = create(String.class);
+        String expectedNewTokenID = create(String.class);
+        String expectedAccessToken = create(String.class);
+        String expectedNewAccessToken = create(String.class);
+        String expectedRefreshToken = create(String.class);
+        String expectedNewRefreshToken = create(String.class);
+        Instant expectedCreatedAt = create(Instant.class);
+        Instant expectedRefreshedAt = create(Instant.class);
+        String[] expectedRoles = create(String[].class);
+        SessionID expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -216,7 +223,7 @@ class SessionServiceImplTest {
         Session expectedSession = new Session(
                 expectedUserID,
                 expectedSessionKey,
-                Instant.now(),
+                expectedCreatedAt,
                 expectedRoles,
                 expectedAccessToken,
                 expectedRefreshToken,
@@ -226,12 +233,14 @@ class SessionServiceImplTest {
         Session expectedRefreshedSession = new Session(
                 expectedUserID,
                 expectedSessionKey,
-                Instant.now(),
+                expectedCreatedAt,
                 expectedRoles,
                 expectedNewAccessToken,
                 expectedNewRefreshToken,
                 expectedNewTokenID
         );
+
+        expectedRefreshedSession.setRefreshedAt(expectedRefreshedAt);
 
         when(tokenUtil.parseRefreshToken(eq(expectedRefreshToken)))
                 .thenReturn(expectedTokenClaims);
@@ -251,15 +260,18 @@ class SessionServiceImplTest {
         when(tokenUtil.generateRefreshToken(eq(expectedRefreshedTokenClaims)))
                 .thenReturn(expectedNewRefreshToken);
 
+        when(timeManager.stampTime())
+                .thenReturn(expectedRefreshedAt);
+
         when(sessionRepository.insert(any()))
                 .then(returnsFirstArg());
 
         Session actualSession = sut.refreshSession(expectedRefreshToken);
 
-        assertTrue(isSessionTheSameButCreatedAfter(expectedRefreshedSession, actualSession));
+        assertEquals(expectedRefreshedSession, actualSession);
 
         verify(sessionRepository)
-                .insert(argThat(session -> isSessionTheSameButCreatedAfter(expectedRefreshedSession, session)));
+                .insert(eq(expectedRefreshedSession));
     }
 
     @Test
@@ -274,11 +286,11 @@ class SessionServiceImplTest {
 
     @Test
     public void Refreshing_session_by_invalid_session_id_is_not_successful() {
-        String      expectedSessionIDStr = create(String.class);
-        String      expectedUserID = create(String.class);
-        String      expectedTokenID = create(String.class);
-        String      expectedRefreshToken = create(String.class);
-        String[]    expectedRoles = create(String[].class);
+        String expectedSessionIDStr = create(String.class);
+        String expectedUserID = create(String.class);
+        String expectedTokenID = create(String.class);
+        String expectedRefreshToken = create(String.class);
+        String[] expectedRoles = create(String[].class);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -298,15 +310,15 @@ class SessionServiceImplTest {
 
     @Test
     public void Refreshing_session_with_invalid_token_id_is_not_successful() {
-        String      expectedSessionIDStr = create(String.class);
-        String      expectedUserID = create(String.class);
-        String      expectedSessionKey = create(String.class);
-        String      expectedTokenID = create(String.class);
-        String      expectedInvalidTokenID  = create(String.class);
-        String      expectedAccessToken = create(String.class);
-        String      expectedRefreshToken = create(String.class);
-        String[]    expectedRoles = create(String[].class);
-        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
+        String expectedSessionIDStr = create(String.class);
+        String expectedUserID = create(String.class);
+        String expectedSessionKey = create(String.class);
+        String expectedTokenID = create(String.class);
+        String expectedInvalidTokenID  = create(String.class);
+        String expectedAccessToken = create(String.class);
+        String expectedRefreshToken = create(String.class);
+        String[] expectedRoles = create(String[].class);
+        SessionID expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -339,13 +351,13 @@ class SessionServiceImplTest {
 
     @Test
     public void Refreshing_session_by_not_existing_session_id_is_not_successful() {
-        String      expectedSessionIDStr = create(String.class);
-        String      expectedUserID = create(String.class);
-        String      expectedSessionKey = create(String.class);
-        String      expectedTokenID = create(String.class);
-        String      expectedRefreshToken = create(String.class);
-        String[]    expectedRoles = create(String[].class);
-        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
+        String expectedSessionIDStr = create(String.class);
+        String expectedUserID = create(String.class);
+        String expectedSessionKey = create(String.class);
+        String expectedTokenID = create(String.class);
+        String expectedRefreshToken = create(String.class);
+        String[] expectedRoles = create(String[].class);
+        SessionID expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -368,14 +380,14 @@ class SessionServiceImplTest {
 
     @Test
     public void Deleting_session_by_valid_token_is_successful() {
-        String      expectedSessionIDStr = create(String.class);
-        String      expectedUserID = create(String.class);
-        String      expectedSessionKey = create(String.class);
-        String      expectedTokenID = create(String.class);
-        String      expectedAccessToken = create(String.class);
-        String      expectedRefreshToken = create(String.class);
-        String[]    expectedRoles = create(String[].class);
-        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
+        String expectedSessionIDStr = create(String.class);
+        String expectedUserID = create(String.class);
+        String expectedSessionKey = create(String.class);
+        String expectedTokenID = create(String.class);
+        String expectedAccessToken = create(String.class);
+        String expectedRefreshToken = create(String.class);
+        String[] expectedRoles = create(String[].class);
+        SessionID expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -424,11 +436,11 @@ class SessionServiceImplTest {
 
     @Test
     public void Deleting_session_by_invalid_session_id_is_not_successful() {
-        String      expectedRefreshToken = create(String.class);
-        String      expectedSessionIDStr = create(String.class);
-        String      expectedUserID = create(String.class);
-        String      expectedTokenID = create(String.class);
-        String[]    expectedRoles = create(String[].class);
+        String expectedRefreshToken = create(String.class);
+        String expectedSessionIDStr = create(String.class);
+        String expectedUserID = create(String.class);
+        String expectedTokenID = create(String.class);
+        String[] expectedRoles = create(String[].class);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -448,13 +460,13 @@ class SessionServiceImplTest {
 
     @Test
     public void Deleting_session_by_not_existing_session_id_is_not_successful() {
-        String      expectedSessionIDStr = create(String.class);
-        String      expectedUserID = create(String.class);
-        String      expectedSessionKey = create(String.class);
-        String      expectedTokenID = create(String.class);
-        String      expectedRefreshToken = create(String.class);
-        String[]    expectedRoles = create(String[].class);
-        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
+        String expectedSessionIDStr = create(String.class);
+        String expectedUserID = create(String.class);
+        String expectedSessionKey = create(String.class);
+        String expectedTokenID = create(String.class);
+        String expectedRefreshToken = create(String.class);
+        String[] expectedRoles = create(String[].class);
+        SessionID expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -477,14 +489,14 @@ class SessionServiceImplTest {
 
     @Test
     public void Deleting_session_with_error_is_not_successful() {
-        String      expectedSessionIDStr = create(String.class);
-        String      expectedUserID = create(String.class);
-        String      expectedSessionKey = create(String.class);
-        String      expectedTokenID = create(String.class);
-        String      expectedAccessToken = create(String.class);
-        String      expectedRefreshToken = create(String.class);
-        String[]    expectedRoles = create(String[].class);
-        SessionID   expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
+        String expectedSessionIDStr = create(String.class);
+        String expectedUserID = create(String.class);
+        String expectedSessionKey = create(String.class);
+        String expectedTokenID = create(String.class);
+        String expectedAccessToken = create(String.class);
+        String expectedRefreshToken = create(String.class);
+        String[] expectedRoles = create(String[].class);
+        SessionID expectedSessionID = new SessionID(expectedUserID, expectedSessionKey);
 
         TokenClaims expectedTokenClaims = new TokenClaims(
                 expectedUserID,
@@ -567,17 +579,5 @@ class SessionServiceImplTest {
 
         verify(sessionRepository)
                 .deleteAllByUserID(eq(expectedUserID));
-    }
-
-    private boolean isSessionTheSameButCreatedAfter(Session session1, Session session2) {
-        return  session1.getUserID().equals(session2.getUserID()) &&
-                session1.getSessionKey().equals(session2.getSessionKey()) &&
-                session1.getTokenID().equals(session2.getTokenID()) &&
-                session1.getAccessToken().equals(session2.getAccessToken()) &&
-                session1.getRefreshToken().equals(session2.getRefreshToken()) &&
-                session1.getRoles().length == session2.getRoles().length &&
-                new HashSet<>(List.of(session1.getRoles())).containsAll(List.of(session2.getRoles())) &&
-                new HashSet<>(List.of(session2.getRoles())).containsAll(List.of(session1.getRoles())) &&
-                session2.getCreatedAt().isAfter(session1.getCreatedAt());
     }
 }

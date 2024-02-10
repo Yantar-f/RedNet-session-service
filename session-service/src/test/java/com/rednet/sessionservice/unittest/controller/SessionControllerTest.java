@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.HashSet;
 import java.util.List;
 
+import static org.instancio.Instancio.create;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -62,7 +63,7 @@ class SessionControllerTest {
 
     @Test
     public void Creating_session_is_successful() throws Exception {
-        Session expectedSession = Instancio.create(Session.class);
+        Session expectedSession = create(Session.class);
 
         SessionCreationData creationData = new SessionCreationData(
                 expectedSession.getUserID(),
@@ -91,7 +92,7 @@ class SessionControllerTest {
 
     @Test
     public void Creating_session_with_invalid_content_type_is_not_successful() throws Exception {
-        SessionCreationData creationData = Instancio.create(SessionCreationData.class);
+        SessionCreationData creationData = create(SessionCreationData.class);
 
         mvc.perform(
                 post("/sessions", creationData)
@@ -107,7 +108,7 @@ class SessionControllerTest {
     public void Creating_session_with_nullable_user_id_is_not_successful() throws Exception {
         SessionCreationData creationData = new SessionCreationData(
                 null,
-                Instancio.create(String[].class)
+                create(String[].class)
         );
 
         mvc.perform(post("/sessions", creationData)
@@ -124,7 +125,7 @@ class SessionControllerTest {
     public void Creating_session_with_blank_user_id_is_not_successful() throws Exception {
         SessionCreationData creationData = new SessionCreationData(
                 "",
-                Instancio.create(String[].class)
+                create(String[].class)
         );
 
         mvc.perform(post("/sessions", creationData)
@@ -140,7 +141,7 @@ class SessionControllerTest {
     @Test
     public void Creating_session_with_nullable_roles_is_not_successful() throws Exception {
         SessionCreationData creationData = new SessionCreationData(
-                Instancio.create(String.class),
+                create(String.class),
                 null
         );
 
@@ -157,7 +158,7 @@ class SessionControllerTest {
     @Test
     public void Creating_session_with_blank_roles_is_not_successful() throws Exception {
         SessionCreationData creationData = new SessionCreationData(
-                Instancio.create(String.class),
+                create(String.class),
                 new String[]{}
         );
 
@@ -173,8 +174,8 @@ class SessionControllerTest {
 
     @Test
     public void Getting_session_is_successful() throws Exception {
-        Session expectedSession = Instancio.create(Session.class);
-        String expectedSessionID = Instancio.create(String.class);
+        Session expectedSession = create(Session.class);
+        String expectedSessionID = create(String.class);
 
         when(sessionService.getSession(eq(expectedSessionID)))
                 .thenReturn(expectedSession);
@@ -202,7 +203,7 @@ class SessionControllerTest {
 
     @Test
     public void Getting_session_with_invalid_id_is_not_successful() throws Exception {
-        String expectedSessionID = Instancio.create(String.class);
+        String expectedSessionID = create(String.class);
 
         when(sessionService.getSession(eq(expectedSessionID)))
                 .thenThrow(SessionNotFoundException.class);
@@ -215,7 +216,7 @@ class SessionControllerTest {
 
     @Test
     public void Getting_session_by_user_id_is_successful() throws Exception {
-        String expectedUserID = Instancio.create(String.class);
+        String expectedUserID = create(String.class);
         List<Session> expectedSessions = Instancio.ofList(Session.class).create();
 
         when(sessionService.getSessionsByUserID(eq(expectedUserID)))
@@ -245,7 +246,7 @@ class SessionControllerTest {
 
     @Test
     public void Getting_session_with_invalid_user_id_is_not_successful() throws Exception {
-        String expectedUserID = Instancio.create(String.class);
+        String expectedUserID = create(String.class);
 
         when(sessionService.getSessionsByUserID(eq(expectedUserID)))
                 .thenThrow(UserSessionsNotFoundException.class);
@@ -258,8 +259,8 @@ class SessionControllerTest {
 
     @Test
     public void Updating_session_is_successful() throws Exception {
-        SessionRefreshingData expectedRefreshingData = Instancio.create(SessionRefreshingData.class);
-        Session expectedUpdatedSession = Instancio.create(Session.class);
+        SessionRefreshingData expectedRefreshingData = create(SessionRefreshingData.class);
+        Session expectedUpdatedSession = create(Session.class);
 
         when(sessionService.refreshSession(eq(expectedRefreshingData.refreshToken())))
                 .thenReturn(expectedUpdatedSession);
@@ -282,7 +283,7 @@ class SessionControllerTest {
 
     @Test
     public void Updating_session_with_invalid_content_type_is_not_successful() throws Exception {
-        SessionRefreshingData expectedRefreshingData = Instancio.create(SessionRefreshingData.class);
+        SessionRefreshingData expectedRefreshingData = create(SessionRefreshingData.class);
 
         mvc.perform(put("/sessions")
                         .content(objectMapper.writeValueAsString(expectedRefreshingData)))
@@ -323,7 +324,7 @@ class SessionControllerTest {
 
     @Test
     public void Updating_session_with_invalid_token_is_not_successful() throws Exception {
-        SessionRefreshingData refreshingData = Instancio.create(SessionRefreshingData.class);
+        SessionRefreshingData refreshingData = create(SessionRefreshingData.class);
 
         when(sessionService.refreshSession(eq(refreshingData.refreshToken())))
                 .thenThrow(InvalidTokenException.class);
@@ -337,7 +338,7 @@ class SessionControllerTest {
 
     @Test
     public void Deleting_sessions_by_user_id_is_successful() throws Exception {
-        String expectedUserID = Instancio.create(String.class);
+        String expectedUserID = create(String.class);
 
         mvc.perform(delete("/sessions/by-user-id")
                         .param("user-id", expectedUserID))
@@ -360,7 +361,7 @@ class SessionControllerTest {
 
     @Test
     public void Deleting_sessions_with_invalid_user_id_is_not_successful() throws Exception {
-        String expectedUserID = Instancio.create(String.class);
+        String expectedUserID = create(String.class);
 
         doThrow(UserSessionsNotFoundException.class)
                 .when(sessionService).deleteSessionsByUserID(eq(expectedUserID));
@@ -373,7 +374,7 @@ class SessionControllerTest {
 
     @Test
     public void Deleting_session_is_successful() throws Exception {
-        SessionRefreshingData expectedRefreshingData = Instancio.create(SessionRefreshingData.class);
+        SessionRefreshingData expectedRefreshingData = create(SessionRefreshingData.class);
 
         mvc.perform(post("/sessions/session-removing-process")
                     .content(objectMapper.writeValueAsString(expectedRefreshingData))
@@ -386,7 +387,7 @@ class SessionControllerTest {
 
     @Test
     public void Deleting_session_with_invalid_content_type_is_not_successful() throws Exception {
-        SessionRefreshingData expectedRefreshingData = Instancio.create(SessionRefreshingData.class);
+        SessionRefreshingData expectedRefreshingData = create(SessionRefreshingData.class);
 
         mvc.perform(post("/sessions/session-removing-process")
                         .content(objectMapper.writeValueAsString(expectedRefreshingData)))
@@ -427,7 +428,7 @@ class SessionControllerTest {
 
     @Test
     public void Deleting_session_with_invalid_token_is_not_successful() throws Exception {
-        SessionRefreshingData refreshingData = Instancio.create(SessionRefreshingData.class);
+        SessionRefreshingData refreshingData = create(SessionRefreshingData.class);
 
         doThrow(InvalidTokenException.class)
                 .when(sessionService).deleteSession(eq(refreshingData.refreshToken()));
