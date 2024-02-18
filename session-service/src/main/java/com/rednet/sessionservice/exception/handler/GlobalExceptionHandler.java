@@ -1,6 +1,7 @@
 package com.rednet.sessionservice.exception.handler;
 
 import com.rednet.sessionservice.exception.impl.InvalidTokenException;
+import com.rednet.sessionservice.exception.impl.ServerErrorException;
 import com.rednet.sessionservice.exception.impl.SessionNotFoundException;
 import com.rednet.sessionservice.exception.impl.SessionRemovingException;
 import com.rednet.sessionservice.exception.impl.UserSessionsNotFoundException;
@@ -8,13 +9,11 @@ import com.rednet.sessionservice.exception.impl.UserSessionsRemovingException;
 import com.rednet.sessionservice.exception.ErrorResponseMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
-import jakarta.ws.rs.ServerErrorException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
@@ -173,7 +172,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(value = ServerErrorException.class)
-    protected ResponseEntity<Object> handleServerError(RuntimeException ex,
+    protected ResponseEntity<Object> handleServerError(ServerErrorException ex,
                                                        HttpServletRequest request) {
         return generateErrorResponse(INTERNAL_SERVER_ERROR, request.getServletPath(), ex.getMessage());
     }
