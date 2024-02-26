@@ -43,13 +43,20 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public Session createSession(SessionCreationData creationData) {
-        SessionID sessionID = sessionIDShaper.generate(creationData.userID());
-        String tokenID = tokenIDGenerator.generate();
-        String convertedSessionID = sessionIDShaper.convert(sessionID);
-        TokenClaims claims = new TokenClaims(creationData.userID(), convertedSessionID, tokenID, creationData.roles());
-        String accessToken = tokenUtil.generateAccessToken(claims);
-        String refreshToken = tokenUtil.generateRefreshToken(claims);
-        Instant createdAt = timeManager.stampTime();
+        SessionID sessionID = generateSessionID(creationData.userID());
+        String tokenID = generateTokenID();
+        String convertedSessionID = convertSessionID(sessionID);
+
+        TokenClaims claims = new TokenClaims(
+                creationData.userID(),
+                convertedSessionID,
+                tokenID,
+                creationData.roles()
+        );
+
+        String accessToken = generateAccessTokenFrom(claims);
+        String refreshToken = generateRefreshTokenFrom(claims);
+        Instant createdAt = stampTime();
 
         return sessionRepository.insert(new Session(
                 creationData.userID(),
@@ -65,7 +72,7 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public Session getSession(String convertedSessionID) {
         try {
-            SessionID sessionID = sessionIDShaper.parse(convertedSessionID);
+            SessionID sessionID = parseSessionID(convertedSessionID);
 
             return sessionRepository
                     .findByID(sessionID)
@@ -88,8 +95,8 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public Session refreshSession(String refreshToken) {
         try {
-            TokenClaims claims = tokenUtil.parseRefreshToken(refreshToken);
-            SessionID sessionID = sessionIDShaper.parse(claims.getSessionID());
+            TokenClaims claims = parseRefreshToken(refreshToken);
+            SessionID sessionID = parseSessionID(claims.getSessionID());
 
             Session session = sessionRepository
                     .findByID(sessionID)
@@ -98,12 +105,12 @@ public class SessionServiceImpl implements SessionService {
             if ( ! session.getTokenID().equals(claims.getTokenID()))
                 throw new InvalidTokenException(refreshToken);
 
-            claims.setTokenID(tokenIDGenerator.generate());
+            claims.setTokenID(generateTokenID());
 
-            session.setAccessToken(tokenUtil.generateAccessToken(claims));
-            session.setRefreshToken(tokenUtil.generateRefreshToken(claims));
+            session.setAccessToken(generateAccessTokenFrom(claims));
+            session.setRefreshToken(generateRefreshTokenFrom(claims));
             session.setTokenID(claims.getTokenID());
-            session.setRefreshedAt(timeManager.stampTime());
+            session.setRefreshedAt(stampTime());
 
             return sessionRepository.insert(session);
         } catch (InvalidSessionIDException e) {
@@ -114,8 +121,8 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public void deleteSession(String refreshToken) {
         try {
-            TokenClaims claims = tokenUtil.parseRefreshToken(refreshToken);
-            SessionID sessionID = sessionIDShaper.parse(claims.getSessionID());
+            TokenClaims claims = parseRefreshToken(refreshToken);
+            SessionID sessionID = parseSessionID(claims.getSessionID());
 
             Session session = sessionRepository
                     .findByID(sessionID)
@@ -139,5 +146,39 @@ public class SessionServiceImpl implements SessionService {
         } else {
             throw new UserSessionsNotFoundException(userID);
         }
+    }
+
+
+    private Instant stampTime() {
+        return timeManager.stampTime();
+    }
+
+    private String generateRefreshTokenFrom(TokenClaims claims) {
+        return tokenUtil.generateRefreshToken(claims);
+    }
+
+    private String generateAccessTokenFrom(TokenClaims claims) {
+        return tokenUtil.generateAccessToken(claims);
+    }
+
+    private String convertSessionID(SessionID sessionID) {
+        return sessionIDShaper.convert(sessionID);
+    }
+
+    private String generateTokenID() {
+        return tokenIDGenerator.generate();
+    }
+
+    private SessionID generateSessionID(String userID) {
+        return sessionIDShaper.generate(userID);
+    }
+
+
+    private SessionID parseSessionID(String sessionID) {
+        return sessionIDShaper.parse(sessionID);
+    }
+
+    private TokenClaims parseRefreshToken(String refreshToken) {
+        return tokenUtil.parseRefreshToken(refreshToken);
     }
 }
